@@ -32,3 +32,5 @@
 - [SPACE_OWL.md](SPACE_OWL.md) — первая Blender-модель совы, файлы и проверка экспорта.
 
 - [CHARACTER_VARIANTS_03.md](CHARACTER_VARIANTS_03.md) — три варианта девушки-курьера и совы в шлеме.
+
+- [COURIER_MODEL.md](COURIER_MODEL.md) — выбранная героиня и честный статус 3D-доработки.
