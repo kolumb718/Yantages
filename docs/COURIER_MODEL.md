@@ -16,3 +16,7 @@
 В .blend оставлены предыдущие сцены, включая сову; они не очищались. Активна новая сцена Orbita_CourierGirl_ArtPass02.
 Первичный генератор — tools/blender/create_courier_girl.py; второй арт-проход — tools/blender/refine_courier_girl.py (использует коллекцию первой версии в Blender).
 Рендер получен из настоящей геометрии Blender, не генерацией изображения. Текущий вид не считается одобренным пользователем.
+
+## Выполнение скрипта из чата
+
+По прямому запросу пользователя выполнен именно выданный в чате скрипт: tools/blender/courier_requested_script.py. Создана сцена Orbita_Courier, скрипт добавлен в Text datablock Blender. Сохранены [v03-script.blend](../art/models/courier-girl/courier-girl-v03-script.blend) и [рендер](../art/models/courier-girl/courier-girl-v03-script-preview.png). Выполнение завершилось без ошибок; изображение проверено через Blender MCP. Предыдущие сцены сохранены. Эта версия — результат выполнения скрипта, не утверждённая финальная модель; без рига, анимаций и импорта в игру.
