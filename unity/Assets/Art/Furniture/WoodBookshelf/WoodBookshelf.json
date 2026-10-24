@@ -1,0 +1,128 @@
+{
+  "name": "WoodBookshelf",
+  "triangles": 16776,
+  "materials": [
+    {
+      "name": "Cabin_HoneyWood",
+      "color": [
+        0.30000001192092896,
+        0.13500000536441803,
+        0.054999999701976776,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_WoodShadow",
+      "color": [
+        0.11999999731779099,
+        0.052000001072883606,
+        0.02500000037252903,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_WoodEdge",
+      "color": [
+        0.4000000059604645,
+        0.20499999821186066,
+        0.0949999988079071,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Book_Cream",
+      "color": [
+        0.6100000143051147,
+        0.5,
+        0.33000001311302185,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_BookPages",
+      "color": [
+        0.7099999785423279,
+        0.6399999856948853,
+        0.49000000953674316,
+        1.0
+      ],
+      "roughness": 0.949999988079071,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Brass",
+      "color": [
+        0.5,
+        0.3199999928474426,
+        0.10499999672174454,
+        1.0
+      ],
+      "roughness": 0.44999998807907104,
+      "metallic": 0.550000011920929
+    },
+    {
+      "name": "Cabin_Book_Plum",
+      "color": [
+        0.27000001072883606,
+        0.15000000596046448,
+        0.20999999344348907,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Book_Blue",
+      "color": [
+        0.1599999964237213,
+        0.23000000417232513,
+        0.3199999928474426,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Book_Sage",
+      "color": [
+        0.20000000298023224,
+        0.3199999928474426,
+        0.23999999463558197,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Book_Teal",
+      "color": [
+        0.10000000149011612,
+        0.25,
+        0.25999999046325684,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_Book_Rust",
+      "color": [
+        0.4399999976158142,
+        0.1599999964237213,
+        0.07999999821186066,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    }
+  ],
+  "source": "Original procedural model; photos used only as references"
+}

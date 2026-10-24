@@ -22,6 +22,7 @@ public static class CharacterIntegrationCheck
     {
         if (!Application.isBatchMode) throw new InvalidOperationException("Run this check in a separate batch editor.");
         CharacterSetup.Prepare();
+        FurnitureSetup.Prepare();
         SessionState.SetString(ErrorKey, "");
         SessionState.SetString("Orbita.CharacterCheck.Deadline", DateTime.UtcNow.AddMinutes(3).Ticks.ToString());
         SessionState.SetInt(StageKey, 1);
@@ -83,6 +84,26 @@ public static class CharacterIntegrationCheck
         typeof(CourierShip).GetMethod(method, Private).Invoke(ship, args);
     }
 
+    static void ValidateFurnishings()
+    {
+        Require(UnityEngine.Object.FindObjectsByType<ShipFurnishings>(FindObjectsSortMode.None).Length == 1,
+            "Duplicate furnishing builders.");
+        string[] names = { "Cabin bed", "Wood bookshelf", "Terracotta sofa", "Monstera downstairs",
+            "Snake plant bridge", "Monstera upstairs", "Pothos reading nook" };
+        float[] heights = { 1.55f, 2.35f, 1.10f, 1.55f, 1.20f, 1.55f, .72f };
+        for (int i = 0; i < names.Length; i++)
+        {
+            var prop = Find(names[i]);
+            var renderer = prop.GetComponentInChildren<Renderer>();
+            Require(renderer != null, "Missing furniture geometry: " + names[i]);
+            Require(Mathf.Abs(renderer.bounds.size.y - heights[i]) < .02f, "Wrong furniture height: " + names[i]);
+            Require(Mathf.Abs(renderer.bounds.min.y - prop.position.y) < .02f, "Furniture floats or sinks: " + names[i]);
+            foreach (var material in renderer.sharedMaterials)
+                Require(material != null && material.shader != null && material.shader.isSupported,
+                    "Missing furniture material: " + names[i]);
+        }
+    }
+
     static void Capture(string name, bool close)
     {
         var camera = Camera.main;
@@ -103,9 +124,22 @@ public static class CharacterIntegrationCheck
                 camera.transform.LookAt(courier.position + new Vector3(.25f, .9f, 0));
                 camera.fieldOfView = 37;
             }
+            if (name == "furniture-bedroom")
+            {
+                camera.transform.position = new Vector3(-7.3f, 7.0f, 1.1f);
+                camera.transform.LookAt(new Vector3(-8.3f, 5.1f, -2.8f));
+                camera.fieldOfView = 60;
+            }
+            else if (name == "furniture-lounge")
+            {
+                camera.transform.position = new Vector3(-9.2f, 2.0f, .2f);
+                camera.transform.LookAt(new Vector3(-10.2f, .65f, -1.8f));
+                camera.fieldOfView = 67;
+            }
             camera.targetTexture = target;
             camera.aspect = 1600f / 1000;
-            if (!close) UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
+            if (!close && !name.StartsWith("furniture-"))
+                UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
             camera.Render();
             RenderTexture.active = target;
             image.ReadPixels(new Rect(0, 0, 1600, 1000), 0, 0);
@@ -150,8 +184,11 @@ public static class CharacterIntegrationCheck
             if (stage == 1)
             {
                 ValidateCharacters();
+                ValidateFurnishings();
                 Capture("characters-game", false);
                 Capture("characters-close", true);
+                Capture("furniture-bedroom", false);
+                Capture("furniture-lounge", false);
                 var start = courier.position;
                 Invoke(ship, "MoveCourier", Vector3.right, 1f);
                 Require(Mathf.Abs(courier.position.x - start.x - 1) < .001f, "Courier movement failed.");
@@ -187,9 +224,10 @@ public static class CharacterIntegrationCheck
             else if (stage == 5)
             {
                 ValidateCharacters();
+                ValidateFurnishings();
                 SessionState.SetInt(StageKey, 0);
                 Directory.CreateDirectory("Captures");
-                File.WriteAllText("Captures/character-check.txt", "PASS: materials, scale, movement, diagonal speed, bounds, lift both ways, owl deck following, terminal, Play Mode restart.\n");
+                File.WriteAllText("Captures/character-check.txt", "PASS: character and furniture materials, scale, furniture floor placement, movement, diagonal speed, bounds, lift both ways, owl deck following, terminal, Play Mode restart.\n");
                 Debug.Log("ORBITA_CHARACTER_CHECK_PASS");
                 EditorApplication.Exit(0);
             }

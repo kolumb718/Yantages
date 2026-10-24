@@ -36,3 +36,5 @@
 - [COURIER_MODEL.md](COURIER_MODEL.md) — выбранная героиня и честный статус 3D-доработки.
 
 - [CHARACTERS_UNITY.md](CHARACTERS_UNITY.md) — импорт героини и совы, prefab и проверка в игре.
+
+- [FURNITURE.md](FURNITURE.md) — мебель и растения по одобренным фотореференсам.

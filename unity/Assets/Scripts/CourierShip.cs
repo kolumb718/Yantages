@@ -3,6 +3,7 @@ using UnityEngine.Rendering;
 
 // Built-in renderer; imported character presentation is handled separately.
 [RequireComponent(typeof(CourierCharacters))]
+[RequireComponent(typeof(ShipFurnishings))]
 public sealed class CourierShip : MonoBehaviour
 {
     Transform player;
@@ -65,8 +66,6 @@ public sealed class CourierShip : MonoBehaviour
         Box(new Vector3(-6,4,3.1f),new Vector3(15.6f,.05f,.05f),"ED8EC6",true);
         // Downstairs sofa, rug, table and galley.
         Box(new Vector3(-9,.06f,1),new Vector3(6,.05f,4),"775B78");
-        Box(new Vector3(-10,.6f,-1.8f),new Vector3(5,.9f,1.7f),"82637F");
-        Box(new Vector3(-10,1.2f,-2.5f),new Vector3(5,1.3f,.3f),"82637F");
         Box(new Vector3(-9,.6f,.6f),new Vector3(2.5f,.18f,1.4f),"B98E77");
         Box(new Vector3(-3,.9f,-3.8f),new Vector3(4.5f,1.8f,1.5f),"526467");
         Box(new Vector3(-3,1.85f,-3.8f),new Vector3(4.7f,.12f,1.7f),"C6AA90");
@@ -74,16 +73,8 @@ public sealed class CourierShip : MonoBehaviour
         Box(new Vector3(.4f,1.85f,-2),new Vector3(1.6f,1.1f,.3f),"526467");
         Box(new Vector3(.4f,1.85f,-1.83f),new Vector3(1.3f,.8f,.04f),"8CD5A9",true);
         // Bedroom and reading nook above.
-        Box(new Vector3(-10,4.45f,-2.5f),new Vector3(4.3f,.7f,2.6f),"DAC3AB");
-        Box(new Vector3(-9.5f,4.9f,-2.5f),new Vector3(3,.2f,2.6f),"A47691");
-        Box(new Vector3(-11.6f,4.95f,-2.5f),new Vector3(.8f,.3f,1.8f),"E6C8AD");
         Box(new Vector3(-4.6f,4.6f,-2),new Vector3(1.5f,.9f,1.5f),"B37A88");
         Box(new Vector3(-4.6f,5.2f,-2.6f),new Vector3(1.5f,1.2f,.25f),"B37A88");
-        for (int row=0;row<3;row++) {
-            float y=4.3f+row*.9f;
-            Box(new Vector3(-6,y,-4.6f),new Vector3(4,.1f,.6f),"AE8879");
-            for(int i=0;i<10;i++) Box(new Vector3(-7.7f+i*.36f,y+.3f,-4.6f),new Vector3(.22f,.5f,.4f), i%2==0?"A386A9":"8AA99E");
-        }
         // Taipei-inspired dusk, windows and a tall neon skyline.
         Box(new Vector3(8,4.5f,-4.8f),new Vector3(10,6,.1f),"674778",true);
         for(int i=0;i<18;i++) {
@@ -99,14 +90,11 @@ public sealed class CourierShip : MonoBehaviour
             Box(new Vector3(.3f,y,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
             Box(new Vector3(.3f,y+.06f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
         }
-        foreach(var p in new[]{new Vector3(-13,0,2),new Vector3(12,0,-2),new Vector3(-12,4.1f,1.5f)}) {
-            Box(p+Vector3.up*.3f,new Vector3(.65f,.6f,.65f),"B38270");
-            for(int i=0;i<3;i++) Box(p+new Vector3((i-1)*.22f,1+i*.12f,0),new Vector3(.25f,1.1f,.25f),"739D86").transform.Rotate(0,0,(i-1)*20);
-        }
         for(int i=0;i<17;i++) Box(new Vector3(-13+i*.9f,7.4f-Mathf.Sin(i/16f*Mathf.PI)*.6f,1.6f),new Vector3(.15f,.2f,.15f),"FFD2A0",true);
         Lamp(new Vector3(-10,2,1),"FFC498",3,9);
         Lamp(new Vector3(-8,6,-1),"FFC498",3,9);
         Lamp(new Vector3(7,4,-2),"BA83E8",4,12);
+        GetComponent<ShipFurnishings>().Build();
         player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
         gameObject.AddComponent<ShipCameraFraming>().Initialize(camera, transform);
     }

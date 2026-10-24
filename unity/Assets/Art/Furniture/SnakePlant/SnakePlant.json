@@ -1,0 +1,73 @@
+{
+  "name": "SnakePlant",
+  "triangles": 3648,
+  "materials": [
+    {
+      "name": "Cabin_ClayPot",
+      "color": [
+        0.47999998927116394,
+        0.20000000298023224,
+        0.09000000357627869,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_ClayRim",
+      "color": [
+        0.6000000238418579,
+        0.28999999165534973,
+        0.14000000059604645,
+        1.0
+      ],
+      "roughness": 0.8799999952316284,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_PottingSoil",
+      "color": [
+        0.054999999701976776,
+        0.029999999329447746,
+        0.01600000075995922,
+        1.0
+      ],
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_LeafGreen",
+      "color": [
+        0.07999999821186066,
+        0.23000000417232513,
+        0.08500000089406967,
+        1.0
+      ],
+      "roughness": 0.6600000262260437,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_LeafGoldEdge",
+      "color": [
+        0.46000000834465027,
+        0.47999998927116394,
+        0.14000000059604645,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_LeafDark",
+      "color": [
+        0.03500000014901161,
+        0.11500000208616257,
+        0.05000000074505806,
+        1.0
+      ],
+      "roughness": 0.7599999904632568,
+      "metallic": 0.0
+    }
+  ],
+  "source": "Original procedural model; photos used only as references"
+}

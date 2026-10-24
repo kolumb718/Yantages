@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 1115013405}
   - component: {fileID: 1115013404}
   - component: {fileID: 1115013406}
+  - component: {fileID: 1115013407}
   m_Layer: 0
   m_Name: Courier ship
   m_TagString: Untagged
@@ -178,6 +179,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CourierCharacters
   courierPrefab: {fileID: 7881090605806078637, guid: 8fecf51c09b87ed498bdd6bc4d14c485, type: 3}
   owlPrefab: {fileID: 797305381988782384, guid: d901911e908257648bddde25ef33214a, type: 3}
+--- !u!114 &1115013407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1115013403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e58f19478a155674795a555482ea3be9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipFurnishings
+  cabinBedPrefab: {fileID: 3467052828259911680, guid: bdddfd6dbb944cc43a4e4959ff668602, type: 3}
+  bookshelfPrefab: {fileID: 76485072648380150, guid: 894e522f3b6885d4abb17a8e6493c4cc, type: 3}
+  sofaPrefab: {fileID: 4530356398676560207, guid: 1671f5c940415b1448a26cbc24c8ad02, type: 3}
+  monsteraPrefab: {fileID: 1184636663404877734, guid: d3fcacd99f8c7cb458d2f5716dffe757, type: 3}
+  snakePlantPrefab: {fileID: 4136841392566414274, guid: f9444ee86f010c243a40b24c38d3714f, type: 3}
+  pothosPrefab: {fileID: 8973127887012380502, guid: cf8e9e6c6dd00774db2bc2bfbe0fd784, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

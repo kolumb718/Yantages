@@ -14,4 +14,6 @@ WASD / стрелки — движение, Shift — быстрее, E — те
 
 Prefab и материалы — Assets/Art/Characters/. Повторная подготовка: меню Orbita → Prepare character prefabs вне Play Mode, после сохранения открытых сцен. Подробнее — ../docs/CHARACTERS_UNITY.md.
 
+Кровать, книжный стеллаж, терракотовый диван и растения заменены на модели из Blender. Ассеты — Assets/Art/Furniture/, подготовка — Orbita → Prepare cabin furniture. Подробности — ../docs/FURNITURE.md.
+
 Подключение MCP — ../docs/UNITY_SETUP.md; текущее состояние — ../docs/STATUS.md; план — ../docs/DEVELOPMENT_PLAN.md.

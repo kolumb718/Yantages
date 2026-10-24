@@ -1,0 +1,62 @@
+{
+  "name": "TerracottaSofa",
+  "triangles": 6708,
+  "materials": [
+    {
+      "name": "Cabin_WoodEdge",
+      "color": [
+        0.4000000059604645,
+        0.20499999821186066,
+        0.0949999988079071,
+        1.0
+      ],
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_TerracottaUpholstery",
+      "color": [
+        0.5299999713897705,
+        0.17000000178813934,
+        0.07500000298023224,
+        1.0
+      ],
+      "roughness": 0.9300000071525574,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_TerracottaCushion",
+      "color": [
+        0.6499999761581421,
+        0.25,
+        0.11999999731779099,
+        1.0
+      ],
+      "roughness": 0.949999988079071,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_RustPiping",
+      "color": [
+        0.3400000035762787,
+        0.0949999988079071,
+        0.03999999910593033,
+        1.0
+      ],
+      "roughness": 0.949999988079071,
+      "metallic": 0.0
+    },
+    {
+      "name": "Cabin_OatmealLinen",
+      "color": [
+        0.6899999976158142,
+        0.5899999737739563,
+        0.4300000071525574,
+        1.0
+      ],
+      "roughness": 0.949999988079071,
+      "metallic": 0.0
+    }
+  ],
+  "source": "Original procedural model; photos used only as references"
+}

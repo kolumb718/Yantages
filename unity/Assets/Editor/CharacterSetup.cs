@@ -66,9 +66,9 @@ public static class CharacterSetup
         return false;
     }
 
-    static GameObject BuildPrefab(string name, float height)
+    internal static GameObject BuildPrefab(string name, float height, string assetRoot = Root)
     {
-        string folder = Root + name;
+        string folder = assetRoot + name;
         string modelPath = folder + "/" + name + ".fbx";
         var importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
         if (importer == null) throw new InvalidOperationException("Missing model: " + modelPath);
