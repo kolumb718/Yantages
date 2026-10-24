@@ -34,21 +34,21 @@ func label(text: String, size: int = 18) -> Label:
 	return l
 
 func _ready() -> void:
-	RenderingServer.set_default_clear_color(Color("101c22"))
+	RenderingServer.set_default_clear_color(Color("151221"))
 	var camera := Camera3D.new()
-	camera.position = Vector3(14, 10, 22)
+	camera.position = Vector3(8.3, 6.3, 13.5)
 	camera.rotation = Vector3.ZERO
 	add_child(camera)
 	camera.look_at(Vector3(0, 1.5, 0))
-	camera.fov = 43
+	camera.fov = 48
 	camera.current = true
 	var ambient := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("101c22")
+	env.background_color = Color("151221")
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("789096")
-	env.ambient_light_energy = 0.8
+	env.ambient_light_color = Color("9d80b7")
+	env.ambient_light_energy = 1.3
 	ambient.environment = env
 	add_child(ambient)
 	box(Vector3(0,-0.2,0),Vector3(17,0.4,7),Color("253633"))
@@ -73,9 +73,16 @@ func _ready() -> void:
 	box(Vector3(.4,1.9,-1.77),Vector3(1.35,.85,.08),Color("8cd5a9"),self,true)
 	box(Vector3(.4,1.15,-1.4),Vector3(1.65,.13,.7),Color("66796d"))
 	box(Vector3(5.3,2.65,-3.2),Vector3(4.4,2.5,.2),Color("182d31"))
-	box(Vector3(5.3,2.65,-3.05),Vector3(3.85,2.05,.1),Color("386475"),self,true)
-	for i in range(12):
-		box(Vector3(3.55+i*.29,1.7,-2.95),Vector3(.2,.7,.06),Color("1c3c48"))
+	box(Vector3(5.3,2.65,-3.05),Vector3(3.85,2.05,.1),Color("362d55"),self,true)
+	# Industrial skyline outside the cockpit glass.
+	for i in range(7):
+		var height := 0.45 + float((i * 7) % 5) * 0.22
+		var x := 3.63 + i * 0.54
+		box(Vector3(x,1.65 + height * .5,-2.92),Vector3(.48,height,.08),Color("202236"))
+		box(Vector3(x,1.75 + height,-2.92),Vector3(.12,.45,.08),Color("242637"))
+		box(Vector3(x,1.72 + height * .4,-2.85),Vector3(.15,.055,.035),Color("ee90d4"),self,true)
+	for i in range(4):
+		box(Vector3(3.8 + i * .9,2.2,-2.87),Vector3(.07,.07,.05),Color("c0a3ff"),self,true)
 	box(Vector3(5.7,.7,-2.2),Vector3(2.8,1.2,1.1),Color("1a2e30"))
 	box(Vector3(5.5,.8,-.3),Vector3(1,.3,1),Color("8b7056"))
 	box(Vector3(5.5,1.3,.1),Vector3(1,1.2,.2),Color("8b7056"))
@@ -84,15 +91,27 @@ func _ready() -> void:
 	var warm := OmniLight3D.new()
 	warm.position = Vector3(-6,2,-1)
 	warm.light_color = Color("ffbe79")
-	warm.light_energy = 2.5
+	warm.light_energy = 3.4
 	warm.omni_range = 7
 	add_child(warm)
 	var cool := OmniLight3D.new()
 	cool.position = Vector3(4,3,-1)
-	cool.light_color = Color("91c9d2")
-	cool.light_energy = 1.7
+	cool.light_color = Color("ad81e8")
+	cool.light_energy = 4.0
 	cool.omni_range = 9
 	add_child(cool)
+	var purple := OmniLight3D.new()
+	purple.position = Vector3(0,3.3,1.3)
+	purple.light_color = Color("b56cfa")
+	purple.light_energy = 4.2
+	purple.omni_range = 11
+	add_child(purple)
+	var window_glow := OmniLight3D.new()
+	window_glow.position = Vector3(5.3,2.8,-2.5)
+	window_glow.light_color = Color("d69cf7")
+	window_glow.light_energy = 3.3
+	window_glow.omni_range = 7
+	add_child(window_glow)
 	player = Node3D.new()
 	player.position = Vector3(-4,0,.6)
 	add_child(player)
