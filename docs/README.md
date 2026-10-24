@@ -28,3 +28,5 @@
 - [UNITY_SETUP.md](UNITY_SETUP.md) — закреплённый редактор, MCP, запуск и результаты проверки.
 
 - [BLENDER_SETUP.md](BLENDER_SETUP.md) — Blender, локальный MCP, запуск и проверки.
+
+- [SPACE_OWL.md](SPACE_OWL.md) — первая Blender-модель совы, файлы и проверка экспорта.

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "mesh_objects": 33,
+  "triangles": 668,
+  "vertices": 447,
+  "materials": 13,
+  "rigged": false,
+  "animated": false,
+  "source": "procedural original mesh",
+  "forward_blender": "-Y",
+  "units": "meters"
+}
