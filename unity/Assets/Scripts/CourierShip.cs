@@ -108,6 +108,7 @@ public sealed class CourierShip : MonoBehaviour
         Lamp(new Vector3(-8,6,-1),"FFC498",3,9);
         Lamp(new Vector3(7,4,-2),"BA83E8",4,12);
         player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
+        gameObject.AddComponent<ShipCameraFraming>().Initialize(camera, transform);
     }
 
     bool AtLift() => Vector2.Distance(new Vector2(player.position.x,player.position.z),new Vector2(lift.x,lift.z))<1.1f;

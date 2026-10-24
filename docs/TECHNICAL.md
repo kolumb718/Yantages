@@ -10,6 +10,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/ | Новая основная версия |
 | unity/Assets/Scripts/CourierShip.cs | Генерация интерьера, движение, лифт, заказ и IMGUI |
 | unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
+| unity/Assets/Scripts/ShipCameraFraming.cs | Подгонка перспективной камеры под корабль и пропорции окна |
 | unity/Assets/Art/Characters/ | FBX, палитры, материалы и prefab героини/совы |
 | unity/Assets/Editor/CharacterSetup.cs | Подготовка персонажей и привязка в Ship |
 | unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode и рендеров |

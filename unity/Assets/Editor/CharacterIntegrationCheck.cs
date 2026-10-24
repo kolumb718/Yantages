@@ -89,6 +89,7 @@ public static class CharacterIntegrationCheck
         var position = camera.transform.position;
         var rotation = camera.transform.rotation;
         float fov = camera.fieldOfView;
+        float aspect = camera.aspect;
         var previousTarget = camera.targetTexture;
         var previousActive = RenderTexture.active;
         var target = new RenderTexture(1600, 1000, 24);
@@ -103,6 +104,8 @@ public static class CharacterIntegrationCheck
                 camera.fieldOfView = 37;
             }
             camera.targetTexture = target;
+            camera.aspect = 1600f / 1000;
+            if (!close) UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
             camera.Render();
             RenderTexture.active = target;
             image.ReadPixels(new Rect(0, 0, 1600, 1000), 0, 0);
@@ -116,6 +119,7 @@ public static class CharacterIntegrationCheck
             RenderTexture.active = previousActive;
             camera.transform.SetPositionAndRotation(position, rotation);
             camera.fieldOfView = fov;
+            camera.aspect = aspect;
             target.Release();
             UnityEngine.Object.DestroyImmediate(target);
             UnityEngine.Object.DestroyImmediate(image);
