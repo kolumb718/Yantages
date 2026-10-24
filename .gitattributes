@@ -2,3 +2,5 @@
 unity/**/*.asset whitespace=-blank-at-eol
 unity/**/*.meta whitespace=-blank-at-eol
 unity/**/*.unity whitespace=-blank-at-eol
+unity/**/*.mat whitespace=-blank-at-eol
+unity/**/*.prefab whitespace=-blank-at-eol

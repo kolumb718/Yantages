@@ -34,3 +34,5 @@
 - [CHARACTER_VARIANTS_03.md](CHARACTER_VARIANTS_03.md) — три варианта девушки-курьера и совы в шлеме.
 
 - [COURIER_MODEL.md](COURIER_MODEL.md) — выбранная героиня и честный статус 3D-доработки.
+
+- [CHARACTERS_UNITY.md](CHARACTERS_UNITY.md) — импорт героини и совы, prefab и проверка в игре.

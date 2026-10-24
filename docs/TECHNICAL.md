@@ -9,6 +9,10 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | --- | --- |
 | unity/ | Новая основная версия |
 | unity/Assets/Scripts/CourierShip.cs | Генерация интерьера, движение, лифт, заказ и IMGUI |
+| unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
+| unity/Assets/Art/Characters/ | FBX, палитры, материалы и prefab героини/совы |
+| unity/Assets/Editor/CharacterSetup.cs | Подготовка персонажей и привязка в Ship |
+| unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode и рендеров |
 | unity/Assets/Editor/ProjectSetup.cs | Создание сцены при первом импорте |
 | unity/Packages/manifest.json | Минимальные зависимости модулей |
 | godot/ | Предыдущий Godot-прототип |
@@ -26,7 +30,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 
 ## Известный технический долг
 CourierShip.cs совмещает несколько обязанностей; материалы создаются многократно.
-Нет физического контроллера, постоянного состояния, адаптивного UI и автоматизированной Unity-проверки.
+Нет физического контроллера, постоянного состояния и адаптивного UI. Для импорта персонажей добавлена batch-проверка реального Play Mode; полного набора регрессионных тестов пока нет.
 Editor-инициализация теперь пропускает создание при dirty active scene; восстановление/импорт чистого checkout ещё проверить.
 Runtime-поиск Standard shader может потребовать явного включения шейдера в сборку; проверить в настоящем player/WebGL.
 

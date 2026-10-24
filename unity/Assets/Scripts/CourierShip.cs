@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Built-in renderer, no imported assets or external packages required.
+// Built-in renderer; imported character presentation is handled separately.
+[RequireComponent(typeof(CourierCharacters))]
 public sealed class CourierShip : MonoBehaviour
 {
     Transform player;
@@ -9,13 +10,6 @@ public sealed class CourierShip : MonoBehaviour
     bool terminal, accepted;
     readonly Vector3 lift = new Vector3(.3f, 0, 1.8f);
     GUIStyle title, text;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Boot()
-    {
-        if (FindFirstObjectByType<CourierShip>() == null)
-            new GameObject("Courier ship").AddComponent<CourierShip>();
-    }
 
     Material Material(string hex, bool glow = false)
     {
@@ -113,11 +107,7 @@ public sealed class CourierShip : MonoBehaviour
         Lamp(new Vector3(-10,2,1),"FFC498",3,9);
         Lamp(new Vector3(-8,6,-1),"FFC498",3,9);
         Lamp(new Vector3(7,4,-2),"BA83E8",4,12);
-        player=new GameObject("Courier").transform;
-        player.SetParent(transform); player.position=new Vector3(-4,0,.6f);
-        Box(new Vector3(0,.85f,0),new Vector3(.5f,.7f,.38f),"C19B66",false,player);
-        Box(new Vector3(0,1.45f,0),new Vector3(.4f,.42f,.4f),"B59B84",false,player);
-        foreach(float x in new[]{-.15f,.15f}) Box(new Vector3(x,.25f,0),new Vector3(.17f,.5f,.22f),"252D2B",false,player);
+        player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
     }
 
     bool AtLift() => Vector2.Distance(new Vector2(player.position.x,player.position.z),new Vector2(lift.x,lift.z))<1.1f;
@@ -128,16 +118,24 @@ public sealed class CourierShip : MonoBehaviour
         if(terminal) return;
         float x=(Input.GetKey(KeyCode.D)||Input.GetKey(KeyCode.RightArrow)?1:0)-(Input.GetKey(KeyCode.A)||Input.GetKey(KeyCode.LeftArrow)?1:0);
         float z=(Input.GetKey(KeyCode.S)||Input.GetKey(KeyCode.DownArrow)?1:0)-(Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow)?1:0);
-        var direction=new Vector3(x,0,z).normalized;
-        var pos=player.position+direction*Time.deltaTime*(Input.GetKey(KeyCode.LeftShift)?6:4);
+        MoveCourier(new Vector3(x,0,z),Time.deltaTime*(Input.GetKey(KeyCode.LeftShift)?6:4));
+        if(Input.GetKeyDown(KeyCode.E)) Interact();
+    }
+
+    void MoveCourier(Vector3 direction, float distance)
+    {
+        direction.Normalize();
+        var pos=player.position+direction*distance;
         pos.x=Mathf.Clamp(pos.x,-13.2f,deck==1?1:13.2f);
         pos.z=Mathf.Clamp(pos.z,-.8f,deck==1?2.5f:4.4f);
         player.position=pos;
         if(direction.sqrMagnitude>0) player.rotation=Quaternion.LookRotation(direction);
-        if(Input.GetKeyDown(KeyCode.E)) {
-            if(AtLift()) { deck=1-deck; player.position=new Vector3(.3f,deck==1?4.1f:0,1.8f); }
-            else if(AtTerminal()) terminal=true;
-        }
+    }
+
+    void Interact()
+    {
+        if(AtLift()) { deck=1-deck; player.position=new Vector3(.3f,deck==1?4.1f:0,1.8f); }
+        else if(AtTerminal()) terminal=true;
     }
 
     void OnGUI()
