@@ -1,13 +1,46 @@
+# Previous prototypes
 node_modules/
 dist/
 godot/.godot/
-unity/[Ll]ibrary/
-unity/[Tt]emp/
-unity/[Oo]bj/
-unity/[Ll]ogs/
-unity/[Uu]ser[Ss]ettings/
-unity/[Bb]uild/
-unity/[Bb]uilds/
-unity/.vs/
-unity/*.csproj
-unity/*.sln
+
+# Unity-generated caches and machine-local state
+/unity/[Ll]ibrary/
+/unity/[Tt]emp/
+/unity/[Oo]bj/
+/unity/[Ll]ogs/
+/unity/[Uu]ser[Ss]ettings/
+/unity/[Mm]emoryCaptures/
+/unity/[Rr]ecordings/
+
+# Exported players and packages
+/unity/[Bb]uild/
+/unity/[Bb]uilds/
+/unity/*.apk
+/unity/*.aab
+/unity/*.unitypackage
+
+# IDE-generated files
+/unity/.vs/
+/unity/.idea/
+/unity/.vscode/
+/unity/*.csproj
+/unity/*.sln
+/unity/*.slnx
+/unity/*.suo
+/unity/*.user
+/unity/*.userprefs
+/unity/*.pidb
+/unity/*.booproj
+/unity/*.svd
+/unity/*.pdb
+/unity/*.mdb
+/unity/*.opendb
+/unity/*.VC.db
+
+# Unity crash reports and local tooling
+/unity/sysinfo.txt
+/unity/mono_crash.*
+/.local/
+
+# Keep Assets (including .meta), ProjectSettings, Packages/manifest.json
+# and Packages/packages-lock.json tracked for reproducible imports.
