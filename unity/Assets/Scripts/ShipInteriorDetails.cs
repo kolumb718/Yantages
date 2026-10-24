@@ -115,7 +115,6 @@ public sealed class ShipInteriorDetails : MonoBehaviour
         Label("Bridge sign", "МОСТИК  /  НАВИГАЦИЯ", new Vector3(8, 7.92f, -4.82f), .24f, new Color(.88f, .76f, .59f), plaque:false);
         Label("Cargo handling stencil", "НЕ ПЕРЕВОРАЧИВАТЬ", new Vector3(.6f, 3.1f, -4.82f), .17f, new Color(.88f, .64f, .32f));
         Label("Service stencil", "ПИТАНИЕ / 24V", new Vector3(1.15f, 5.7f, -4.82f), .17f, new Color(.82f, .68f, .44f));
-        Label("Lift floor marker", "ЛИФТ / 01-02", new Vector3(.3f, .31f, 2.90f), .14f, new Color(.65f, .91f, .86f), plaque:false);
 
         Box("Upper service panel", new Vector3(1.8f, 7.5f, -4.64f), new Vector3(.65f, .57f, .18f), metal);
         for (int i = 0; i < 3; i++)

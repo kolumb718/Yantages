@@ -23,6 +23,11 @@ public static class CharacterIntegrationCheck
         if (!Application.isBatchMode) throw new InvalidOperationException("Run this check in a separate batch editor.");
         CharacterSetup.Prepare();
         FurnitureSetup.Prepare();
+        Directory.CreateDirectory("Captures");
+        File.WriteAllText("Captures/lift-animation-times.csv", "");
+        SessionState.SetInt("Orbita.CharacterCheck.LiftFrame", -1);
+        SessionState.SetBool("Orbita.CharacterCheck.LiftMiddle", false);
+        SessionState.SetBool("Orbita.CharacterCheck.LiftDownMiddle", false);
         SessionState.SetString(ErrorKey, "");
         SessionState.SetString("Orbita.CharacterCheck.Deadline", DateTime.UtcNow.AddMinutes(3).Ticks.ToString());
         SessionState.SetInt(StageKey, 1);
@@ -155,8 +160,10 @@ public static class CharacterIntegrationCheck
         float aspect = camera.aspect;
         var previousTarget = camera.targetTexture;
         var previousActive = RenderTexture.active;
-        var target = new RenderTexture(1600, 1000, 24);
-        var image = new Texture2D(1600, 1000, TextureFormat.RGB24, false);
+        bool animationFrame = name.StartsWith("lift-frame-");
+        int width = animationFrame ? 800 : 1600, height = animationFrame ? 800 : 1000;
+        var target = new RenderTexture(width, height, 24);
+        var image = new Texture2D(width, height, TextureFormat.RGB24, false);
         try
         {
             if (close)
@@ -196,16 +203,25 @@ public static class CharacterIntegrationCheck
                 camera.transform.LookAt(new Vector3(11.6f, 1.35f, 2.0f));
                 camera.fieldOfView = 40;
             }
+            else if (name.StartsWith("lift-") && name != "lift-overview")
+            {
+                camera.transform.position = new Vector3(5.6f, 5.5f, 8.0f);
+                camera.transform.LookAt(new Vector3(.3f, 3.1f, 1.8f));
+                camera.fieldOfView = 48;
+            }
             camera.targetTexture = target;
-            camera.aspect = 1600f / 1000;
-            if (!close && !name.StartsWith("furniture-") && !name.StartsWith("details-"))
+            camera.aspect = (float)width / height;
+            if (!close && !name.StartsWith("furniture-") && !name.StartsWith("details-")
+                && (!name.StartsWith("lift-") || name == "lift-overview"))
                 UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
             camera.Render();
             RenderTexture.active = target;
-            image.ReadPixels(new Rect(0, 0, 1600, 1000), 0, 0);
+            image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             image.Apply();
             Directory.CreateDirectory("Captures");
             File.WriteAllBytes("Captures/" + name + ".png", image.EncodeToPNG());
+            if (animationFrame)
+                File.AppendAllText("Captures/lift-animation-times.csv", name+","+Time.time.ToString("R", System.Globalization.CultureInfo.InvariantCulture)+"\n");
         }
         finally
         {
@@ -241,6 +257,7 @@ public static class CharacterIntegrationCheck
             var ship = UnityEngine.Object.FindFirstObjectByType<CourierShip>();
             var courier = Find("Courier");
             var owl = Find("Space owl companion");
+            var lift = UnityEngine.Object.FindFirstObjectByType<ShipLift>();
             if (stage == 1)
             {
                 ValidateCharacters();
@@ -260,31 +277,107 @@ public static class CharacterIntegrationCheck
                 courier.position = start;
                 Invoke(ship, "MoveCourier", new Vector3(1, 0, 1), 1f);
                 Require(Mathf.Abs(Vector3.Distance(courier.position, start) - 1) < .001f, "Diagonal speed changed.");
+                courier.position = new Vector3(-4, 0, -.6f);
                 Invoke(ship, "MoveCourier", Vector3.right, 100f);
                 Require(Mathf.Abs(courier.position.x - 13.2f) < .001f, "Deck movement bounds failed.");
-                courier.position = new Vector3(.3f, 0, 1.8f);
+                // Glass blocks entry from the front; the left landing door admits the player.
+                courier.position = new Vector3(.3f, 0, 3.8f);
+                Invoke(ship, "MoveCourier", Vector3.back, 2f);
+                Require(courier.position.z >= 3.1f, "Courier walked through the front glass.");
+                courier.position = new Vector3(-1.4f, 0, 1.8f);
+                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
+                Require(courier.position.x > -.1f, "Open left landing door is blocked.");
+                foreach (var renderer in ship.GetComponentsInChildren<Renderer>())
+                    Require(!renderer.bounds.Contains(new Vector3(.3f, 3.9f, 1.8f)), "Upper deck blocks the lift shaft opening.");
+                Capture("lift-bottom", false);
                 Invoke(ship, "Interact");
-                Require(Mathf.Abs(courier.position.y - 4.1f) < .001f, "Lift up failed.");
+                Require(lift.IsRiding && lift.IsMoving && Mathf.Abs(courier.position.y) < .001f, "Lift teleported instead of starting a ride.");
+                SessionState.SetFloat("Orbita.CharacterCheck.LiftStart", Time.time);
+                Capture("lift-frame-000", false);
+                SessionState.SetInt("Orbita.CharacterCheck.LiftFrame", 0);
                 SessionState.SetInt(StageKey, 2);
                 ticks = 0;
             }
             else if (stage == 2)
             {
+                if (lift.IsMoving)
+                {
+                    CheckRiding(ship, courier, owl, lift);
+                    int bin = Mathf.FloorToInt(lift.Progress*20);
+                    if (bin > SessionState.GetInt("Orbita.CharacterCheck.LiftFrame", -1))
+                    {
+                        Capture("lift-frame-"+bin.ToString("D3"), false);
+                        SessionState.SetInt("Orbita.CharacterCheck.LiftFrame", bin);
+                    }
+                    if (lift.Progress > .4f && lift.Progress < .7f && !SessionState.GetBool("Orbita.CharacterCheck.LiftMiddle", false))
+                    {
+                        Require(courier.position.y > .5f && courier.position.y < 3.8f, "No intermediate lift height.");
+                        Capture("lift-middle", false);
+                        Capture("lift-overview", false);
+                        SessionState.SetBool("Orbita.CharacterCheck.LiftMiddle", true);
+                    }
+                    return;
+                }
+                Require(Time.time-SessionState.GetFloat("Orbita.CharacterCheck.LiftStart", 0) >= ShipLift.TravelSeconds,
+                    "Lift arrived too fast.");
+                Require(SessionState.GetBool("Orbita.CharacterCheck.LiftMiddle", false), "Lift skipped intermediate frames.");
+                Require(lift.CurrentDeck == 1 && Mathf.Abs(courier.position.y-4.1f) < .001f, "Lift up failed.");
+                Require(courier.parent != lift.Platform, "Courier was not released on arrival.");
+                Capture("lift-frame-021", false);
+                Capture("lift-top", false);
                 Require(Mathf.Abs(Mathf.DeltaAngle(SessionState.GetFloat("Orbita.CharacterCheck.PlanetYaw", 0),
                     Find("Holographic planet").localEulerAngles.y)) > .01f, "Hologram planet does not rotate.");
                 Require(Mathf.Abs(owl.position.y - courier.position.y - 1.05f) < .1f, "Owl did not follow to upper deck.");
                 Capture("characters-upper-deck", false);
                 Invoke(ship, "Interact");
-                Require(Mathf.Abs(courier.position.y) < .001f, "Lift down failed.");
+                Require(lift.IsRiding && Mathf.Abs(courier.position.y-4.1f) < .001f, "Lift down teleported or failed to start.");
                 SessionState.SetInt(StageKey, 3);
                 ticks = 0;
             }
             else if (stage == 3)
             {
+                if (lift.IsMoving)
+                {
+                    CheckRiding(ship, courier, owl, lift);
+                    if (lift.Progress > .4f && lift.Progress < .7f && !SessionState.GetBool("Orbita.CharacterCheck.LiftDownMiddle", false))
+                    {
+                        Capture("lift-descending", false);
+                        SessionState.SetBool("Orbita.CharacterCheck.LiftDownMiddle", true);
+                    }
+                    return;
+                }
+                Require(lift.CurrentDeck == 0 && Mathf.Abs(courier.position.y) < .001f, "Lift down failed.");
                 Require(Mathf.Abs(owl.position.y - courier.position.y - 1.05f) < .1f, "Owl did not return to lower deck.");
                 courier.position = new Vector3(.4f, 0, -.6f);
                 Invoke(ship, "Interact");
                 Require((bool)typeof(CourierShip).GetField("terminal", Private).GetValue(ship), "Terminal interaction regressed.");
+                typeof(CourierShip).GetField("terminal", Private).SetValue(ship, false);
+                // Simulate a passenger waiting upstairs: an absent platform must be callable.
+                courier.position = new Vector3(-1.4f, 4.1f, 1.8f);
+                typeof(CourierShip).GetField("deck", Private).SetValue(ship, 1);
+                Invoke(ship, "MoveCourier", Vector3.right, 2f);
+                Require(courier.position.x < -1.10f, "Closed landing door admits the passenger into an empty shaft.");
+                courier.position = new Vector3(-1.4f, 4.1f, 1.8f);
+                Invoke(ship, "Interact");
+                Require(lift.IsMoving && !lift.IsRiding, "Empty lift call failed.");
+                SessionState.SetInt(StageKey, 6);
+                ticks = 0;
+            }
+            else if (stage == 6)
+            {
+                Require(Mathf.Abs(courier.position.y-4.1f) < .001f, "Empty lift moved the waiting passenger.");
+                if (lift.IsMoving) return;
+                Require(lift.CurrentDeck == 1, "Called lift did not arrive upstairs.");
+                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
+                Invoke(ship, "Interact");
+                Require(lift.IsRiding, "Passenger cannot board after calling the lift.");
+                SessionState.SetInt(StageKey, 7);
+                ticks = 0;
+            }
+            else if (stage == 7)
+            {
+                if (lift.IsMoving) return;
+                Require(lift.CurrentDeck == 0 && Mathf.Abs(courier.position.y) < .001f, "Return ride after empty call failed.");
                 SessionState.SetInt(StageKey, 4);
                 EditorApplication.isPlaying = false;
             }
@@ -295,7 +388,7 @@ public static class CharacterIntegrationCheck
                 ValidateInteriorDetails();
                 SessionState.SetInt(StageKey, 0);
                 Directory.CreateDirectory("Captures");
-                File.WriteAllText("Captures/character-check.txt", "PASS: characters, furniture, wardrobe equipment and materials, window bounds, Cyrillic lettering, hologram window placement and rotation, movement, diagonal speed, lift both ways, owl deck following, terminal, Play Mode restart.\n");
+                File.WriteAllText("Captures/character-check.txt", "PASS: scene and materials, glass lift boundaries and open doorway, clear shaft opening, six-second ascent/descent, intermediate passenger/platform height, movement lock, owl cabin travel, repeat-input guard, arrival release, empty lift call and boarding, terminal, Play Mode restart.\n");
                 Debug.Log("ORBITA_CHARACTER_CHECK_PASS");
                 EditorApplication.Exit(0);
             }
@@ -308,5 +401,16 @@ public static class CharacterIntegrationCheck
             Debug.LogException(exception);
             EditorApplication.Exit(1);
         }
+    }
+
+    static void CheckRiding(CourierShip ship, Transform courier, Transform owl, ShipLift lift)
+    {
+        Require(lift.IsRiding && courier.parent == lift.Platform, "Passenger is not attached to the moving platform.");
+        Require(Mathf.Abs(courier.position.y-lift.Platform.position.y) < .002f, "Passenger drifted off the platform.");
+        Require(Mathf.Abs(owl.position.y-courier.position.y-1.05f) < .10f, "Owl left the moving cabin.");
+        var position = courier.position;
+        Invoke(ship, "MoveCourier", Vector3.right, 1f);
+        Require(Vector3.Distance(position, courier.position) < .001f, "Movement was not locked during travel.");
+        Require(!lift.TryUse(lift.CurrentDeck), "Repeated interaction restarted a moving lift.");
     }
 }

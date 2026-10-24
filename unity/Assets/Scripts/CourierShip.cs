@@ -9,7 +9,7 @@ public sealed class CourierShip : MonoBehaviour
     Transform player;
     int deck;
     bool terminal, accepted;
-    readonly Vector3 lift = new Vector3(.3f, 0, 1.8f);
+    ShipLift liftController;
     GUIStyle title, text;
 
     Material Material(string hex, bool glow = false)
@@ -59,7 +59,11 @@ public sealed class CourierShip : MonoBehaviour
         Box(new Vector3(-14,4,0), new Vector3(.25f,8,10), "353347");
         for (int x=-13; x<14; x++)
             Box(new Vector3(x,.025f,0),new Vector3(.94f,.05f,9.8f),"48414C");
-        Box(new Vector3(-6,3.9f,-.8f),new Vector3(15.6f,.3f,7.8f),"63505E");
+        // Four slabs leave a real opening around the glass lift shaft.
+        Box(new Vector3(-7.325f,3.9f,-.8f),new Vector3(12.95f,.3f,7.8f),"63505E");
+        Box(new Vector3(.3f,3.9f,-1.975f),new Vector3(2.3f,.3f,5.45f),"63505E");
+        Box(new Vector3(1.625f,3.9f,-.8f),new Vector3(.35f,.3f,7.8f),"63505E");
+        Box(new Vector3(.3f,3.9f,2.975f),new Vector3(2.3f,.3f,.25f),"63505E");
         for (int x=-13; x<2; x+=2)
             Box(new Vector3(x,4.65f,3),new Vector3(.06f,1.2f,.06f),"BC9690");
         Box(new Vector3(-6,5.25f,3),new Vector3(15.6f,.06f,.06f),"D1A58D");
@@ -78,10 +82,6 @@ public sealed class CourierShip : MonoBehaviour
         gameObject.AddComponent<ShipWindowView>().Build(transform);
         Box(new Vector3(8,.9f,-3),new Vector3(6,1.8f,1.6f),"283949");
         for(int x=6;x<=10;x+=2) Box(new Vector3(x,1.85f,-3),new Vector3(1.2f,.08f,.8f),"87C5C8",true);
-        Box(new Vector3(.3f,.08f,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
-        Box(new Vector3(.3f,.14f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
-        Box(new Vector3(.3f,4.1f,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
-        Box(new Vector3(.3f,4.16f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
         for(int i=0;i<17;i++) Box(new Vector3(-13+i*.9f,7.4f-Mathf.Sin(i/16f*Mathf.PI)*.6f,1.6f),new Vector3(.15f,.2f,.15f),"FFD2A0",true);
         Lamp(new Vector3(-10,2,1),"FFC498",3,9);
         Lamp(new Vector3(-8,6,-1),"FFC498",3,9);
@@ -90,15 +90,18 @@ public sealed class CourierShip : MonoBehaviour
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
         gameObject.AddComponent<ShipWardrobe>().Build(transform);
         player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
+        liftController=gameObject.AddComponent<ShipLift>();
+        liftController.Build(transform,player,GetComponent<CourierCharacters>());
+        liftController.PassengerArrived += floor => deck=floor;
         gameObject.AddComponent<ShipCameraFraming>().Initialize(camera, transform);
     }
 
-    bool AtLift() => Vector2.Distance(new Vector2(player.position.x,player.position.z),new Vector2(lift.x,lift.z))<1.1f;
+    bool AtLift() => liftController != null && liftController.IsNear(player.position,deck);
     bool AtTerminal() => deck==0 && Vector3.Distance(player.position,new Vector3(.4f,0,-.6f))<2;
     void Update()
     {
         if(Input.GetKeyDown(KeyCode.Escape)) terminal=false;
-        if(terminal) return;
+        if(terminal || (liftController != null && liftController.IsRiding)) return;
         float x=(Input.GetKey(KeyCode.D)||Input.GetKey(KeyCode.RightArrow)?1:0)-(Input.GetKey(KeyCode.A)||Input.GetKey(KeyCode.LeftArrow)?1:0);
         float z=(Input.GetKey(KeyCode.S)||Input.GetKey(KeyCode.DownArrow)?1:0)-(Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow)?1:0);
         MoveCourier(new Vector3(x,0,z),Time.deltaTime*(Input.GetKey(KeyCode.LeftShift)?6:4));
@@ -107,17 +110,19 @@ public sealed class CourierShip : MonoBehaviour
 
     void MoveCourier(Vector3 direction, float distance)
     {
+        if(liftController != null && liftController.IsRiding) return;
         direction.Normalize();
         var pos=player.position+direction*distance;
         pos.x=Mathf.Clamp(pos.x,-13.2f,deck==1?1:13.2f);
         pos.z=Mathf.Clamp(pos.z,-.8f,deck==1?2.5f:4.4f);
-        player.position=pos;
+        player.position=liftController != null ? liftController.ConstrainMovement(player.position,pos,deck) : pos;
         if(direction.sqrMagnitude>0) player.rotation=Quaternion.LookRotation(direction);
     }
 
     void Interact()
     {
-        if(AtLift()) { deck=1-deck; player.position=new Vector3(.3f,deck==1?4.1f:0,1.8f); }
+        if(liftController != null && liftController.IsRiding) return;
+        if(AtLift()) liftController.TryUse(deck);
         else if(AtTerminal()) terminal=true;
     }
 
@@ -128,7 +133,9 @@ public sealed class CourierShip : MonoBehaviour
         GUI.Label(new Rect(28,22,650,40),"ОРБИТА / МЕЖПЛАНЕТНАЯ ДОСТАВКА",title);
         GUI.Label(new Rect(28,65,650,32),deck==0?"ПАЛУБА 01 · ГОСТИНАЯ И МОСТИК":"ПАЛУБА 02 · ДОМА, НАВЕРХУ",text);
         GUI.Label(new Rect(28,Screen.height-44,1000,35),"WASD / стрелки — ходить · Shift — быстрее · E — терминал / лифт · Esc — закрыть",text);
-        if(!terminal) { GUI.Label(new Rect(Screen.width/2-180,Screen.height-105,500,40),AtLift()?"E · Лифт — "+(deck==0?"в каюту":"в гостиную"):AtTerminal()?"E · Открыть заказ":"",text); return; }
+        if(!terminal) { GUI.Label(new Rect(Screen.width/2-220,Screen.height-105,600,40),
+            liftController != null && (AtLift() || liftController.IsRiding) ? liftController.Hint(player.position,deck)
+            : AtTerminal()?"E · Открыть заказ":"",text); return; }
         var panel=new Rect(Screen.width/2-245,Screen.height/2-215,490,430);
         GUI.Box(panel,""); GUILayout.BeginArea(new Rect(panel.x+25,panel.y+20,440,390));
         GUILayout.Label("Ужин на краю Солнечной системы",title);

@@ -9,6 +9,12 @@ public sealed class CourierCharacters : MonoBehaviour
     Transform courier;
     Transform owl;
     Vector3 previousPosition;
+    bool liftTravel;
+
+    public void SetLiftTravel(bool active)
+    {
+        liftTravel = active;
+    }
 
     public Transform CreateCourier(Vector3 position)
     {
@@ -36,6 +42,14 @@ public sealed class CourierCharacters : MonoBehaviour
     public void SnapCompanion()
     {
         if (courier == null || owl == null) return;
+        if (liftTravel)
+        {
+            // Stay inside the glass cabin, moving at exactly the passenger's speed.
+            owl.position = courier.position + new Vector3(.45f, 1.05f, -.20f);
+            owl.rotation = courier.rotation;
+            previousPosition = courier.position;
+            return;
+        }
         owl.position = CompanionPosition();
         owl.rotation = courier.rotation;
         previousPosition = courier.position;
@@ -44,6 +58,11 @@ public sealed class CourierCharacters : MonoBehaviour
     void LateUpdate()
     {
         if (courier == null || owl == null) return;
+        if (liftTravel)
+        {
+            SnapCompanion();
+            return;
+        }
         // Deck changes must not make the owl fly through the intervening floor.
         if (Mathf.Abs(courier.position.y - previousPosition.y) > 1)
             SnapCompanion();

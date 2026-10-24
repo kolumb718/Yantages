@@ -15,6 +15,8 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/ShipWindowView.cs | Городская сценография внутри панорамного окна |
 | unity/Assets/Scripts/ShipInteriorDetails.cs | Надписи, кабели и вращающаяся голограмма |
 | unity/Assets/Scripts/ShipWardrobe.cs | Открытый гардероб со скафандром и снаряжением |
+| unity/Assets/Scripts/ShipLift.cs | Движение платформы, пассажир, вызов и ограничения шахты |
+| unity/Assets/Scripts/GlassLiftVisuals.cs | Стеклянная шахта, настил, направляющие, двери и индикаторы |
 | unity/Assets/Shaders/Hologram.shader | Прозрачная сканирующая оболочка планеты |
 | unity/Assets/Art/Furniture/ | FBX, палитры, материалы и prefab мебели/растений |
 | unity/Assets/Editor/FurnitureSetup.cs | Подготовка мебели и привязка в Ship |
