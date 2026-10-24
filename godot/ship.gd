@@ -4,7 +4,8 @@ var player: Node3D
 var prompt: Label
 var order_panel: PanelContainer
 var accepted := false
-var speed := 3.0
+var speed := 4.0
+var deck := 0
 
 func material(color: Color, glow := false) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -36,10 +37,10 @@ func label(text: String, size: int = 18) -> Label:
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("151221"))
 	var camera := Camera3D.new()
-	camera.position = Vector3(8.3, 6.3, 13.5)
+	camera.position = Vector3(14, 13, 29)
 	camera.rotation = Vector3.ZERO
 	add_child(camera)
-	camera.look_at(Vector3(0, 1.5, 0))
+	camera.look_at(Vector3(0, 3.5, 0))
 	camera.fov = 48
 	camera.current = true
 	var ambient := WorldEnvironment.new()
@@ -51,14 +52,14 @@ func _ready() -> void:
 	env.ambient_light_energy = 1.3
 	ambient.environment = env
 	add_child(ambient)
-	box(Vector3(0,-0.2,0),Vector3(17,0.4,7),Color("253633"))
-	box(Vector3(0,2.2,-3.45),Vector3(17,4.6,0.3),Color("344744"))
-	box(Vector3(-8.5,2,0),Vector3(.3,4,7),Color("344744"))
-	for x in range(-8,9,4):
-		box(Vector3(x,4.4,0),Vector3(.2,.25,7),Color("16282a"))
-		box(Vector3(x,2.2,-3.2),Vector3(.2,4.5,.3),Color("17292b"))
-	for x in range(-8,8):
-		box(Vector3(x+.45,.04,0),Vector3(.92,.04,6.8),Color("39433b"))
+	box(Vector3(0,-0.2,0),Vector3(28,0.4,10),Color("253633"))
+	box(Vector3(0,4,-5),Vector3(28,8.5,0.3),Color("344744"))
+	box(Vector3(-14,4,0),Vector3(.3,8,10),Color("344744"))
+	for x in range(-12,14,4):
+		box(Vector3(x,8,-2),Vector3(.2,.25,6),Color("16282a"))
+		box(Vector3(x,4,-4.8),Vector3(.2,8,.3),Color("17292b"))
+	for x in range(-14,14):
+		box(Vector3(x+.45,.04,0),Vector3(.92,.04,9.8),Color("39433b"))
 	# Living corner
 	box(Vector3(-5.6,.55,-1.9),Vector3(3.3,.5,1.7),Color("1d3030"))
 	box(Vector3(-5.6,.9,-1.9),Vector3(3.1,.2,1.55),Color("a99f80"))
@@ -112,6 +113,70 @@ func _ready() -> void:
 	window_glow.light_energy = 3.3
 	window_glow.omni_range = 7
 	add_child(window_glow)
+	# Mezzanine: open-front upper living deck, accessed by the central lift.
+	box(Vector3(-6,3.9,-.8),Vector3(15.6,.3,7.8),Color("3e354b"))
+	box(Vector3(-6,4.07,-.8),Vector3(15.5,.04,7.7),Color("725664"))
+	for x in range(-13,2,2):
+		box(Vector3(x,4.65,3),Vector3(.06,1.2,.06),Color("bc9690"))
+	box(Vector3(-6,5.25,3),Vector3(15.6,.06,.06),Color("d1a58d"))
+	box(Vector3(-6,4,3.1),Vector3(15.6,.05,.05),Color("ed8ec6"),self,true)
+	# Bedroom, reading corner, records and books upstairs.
+	box(Vector3(-10,4.4,-2.5),Vector3(4.3,.6,2.6),Color("40384d"))
+	box(Vector3(-10,4.8,-2.5),Vector3(4.2,.25,2.5),Color("d5bfa7"))
+	box(Vector3(-9.5,5,-2.5),Vector3(3,.18,2.55),Color("a47691"))
+	box(Vector3(-11.6,5,-2.5),Vector3(.8,.25,1.8),Color("e6c8ad"))
+	box(Vector3(-5,4.13,-1),Vector3(3.4,.04,3),Color("927b80"))
+	box(Vector3(-4.6,4.6,-2),Vector3(1.5,.9,1.5),Color("b37a88"))
+	box(Vector3(-4.6,5.2,-2.6),Vector3(1.5,1.2,.25),Color("b37a88"))
+	box(Vector3(-2.5,4.7,-2),Vector3(1.5,.12,1),Color("c09c80"))
+	for y in [4.3,5.2,6.1]:
+		box(Vector3(-6,y,-4.6),Vector3(4,.1,.6),Color("ae8879"))
+		for i in range(10):
+			box(Vector3(-7.7+i*.36,y+.3,-4.6),Vector3(.22,.5,.4),Color.from_hsv(float(i)/12,.3,.7))
+	# Spacious lower lounge and cargo area.
+	box(Vector3(-10,.08,1.4),Vector3(5,.05,3.8),Color("775b78"))
+	box(Vector3(-11.6,.6,.6),Vector3(1.7,.9,3.5),Color("82637f"))
+	box(Vector3(-12.3,1.2,.6),Vector3(.3,1.4,3.5),Color("82637f"))
+	box(Vector3(-9.5,.6,1.2),Vector3(2,.15,1.4),Color("b98e77"))
+	box(Vector3(-9.5,.3,1.2),Vector3(.25,.6,.8),Color("42384a"))
+	box(Vector3(-9.5,.8,1.2),Vector3(.2,.25,.2),Color("efd3ad"))
+	for x in [10.0,12.0]:
+		box(Vector3(x,.7,3.5),Vector3(1.6,1.4,1.5),Color("716579"))
+		box(Vector3(x,.8,4.27),Vector3(.8,.15,.03),Color("e1b787"))
+	# Tall bridge window and neon skyline inspired by a violet Taipei dusk.
+	box(Vector3(8,5.4,-4.8),Vector3(10,4.6,.1),Color("674778"),self,true)
+	for i in range(18):
+		var h := .7 + float((i*7)%11)*.24
+		var x := 3.4 + float(i)*.53
+		box(Vector3(x,3.2+h*.5,-4.65),Vector3(.45,h,.08),Color("292a44"))
+		for j in range(5):
+			box(Vector3(x,3.3+float(j)*h/6,-4.59),Vector3(.24,.04,.02),Color("eda6cc"),self,true)
+	box(Vector3(8,5.5,-4.5),Vector3(.6,4.3,.12),Color("33314c"))
+	box(Vector3(8,8,-4.5),Vector3(.06,.8,.06),Color("edb0d6"),self,true)
+	for x in [3.0,8.0,13.0]:
+		box(Vector3(x,5.4,-4.4),Vector3(.1,4.7,.15),Color("242b3d"))
+	# Lift landings are reachable from the walking lane on either floor.
+	for y in [.08,4.1]:
+		box(Vector3(.3,y,1.8),Vector3(2.3,.08,2.1),Color("8c729d"))
+		box(Vector3(.3,y+.06,2.86),Vector3(2.3,.04,.04),Color("9cd8d2"),self,true)
+	for x in [-.9,1.5]:
+		box(Vector3(x,2.1,.8),Vector3(.06,4.2,.06),Color("aba0b0"))
+	# Plants, warm lamps and a sagging string of bulbs.
+	for pos in [Vector3(-13,0,2),Vector3(12,0,-2),Vector3(-12,4.1,1.5),Vector3(-2.6,4.1,-.8)]:
+		box(pos+Vector3(0,.3,0),Vector3(.65,.6,.65),Color("b38270"))
+		for i in range(3):
+			var leaf := box(pos+Vector3((i-1)*.22,1+i*.12,0),Vector3(.25,1.1,.25),Color("739d86"))
+			leaf.rotation.z = (i-1)*.35
+	for i in range(17):
+		var y := 7.4-sin(float(i)/16*PI)*.6
+		box(Vector3(-13+i*.9,y,1.6),Vector3(.15,.2,.15),Color("ffd2a0"),self,true)
+	for pos in [Vector3(-10,2,1),Vector3(-9,6,-1),Vector3(-3,6,0)]:
+		var lamp := OmniLight3D.new()
+		lamp.position = pos
+		lamp.light_color = Color("ffc498")
+		lamp.light_energy = 2.5
+		lamp.omni_range = 7
+		add_child(lamp)
 	player = Node3D.new()
 	player.position = Vector3(-4,0,.6)
 	add_child(player)
@@ -124,7 +189,7 @@ func _ready() -> void:
 	var top := label("ОРБИТА   /   МЕЖПЛАНЕТНАЯ ДОСТАВКА",23)
 	top.position = Vector2(35,28)
 	ui.add_child(top)
-	var hint := label("WASD / стрелки — ходить     E — терминал     Esc — закрыть",16)
+	var hint := label("WASD / стрелки — ходить     E — терминал / лифт     Esc — закрыть",16)
 	hint.position = Vector2(35,665)
 	ui.add_child(hint)
 	prompt = label("",20)
@@ -165,11 +230,26 @@ func _process(delta: float) -> void:
 		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): direction.z += 1
 		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): direction.z -= 1
 	player.position += direction.normalized() * speed * delta
-	player.position.x = clampf(player.position.x,-7.6,7.6)
-	player.position.z = clampf(player.position.z,-.8,2.7)
+	player.position.x = clampf(player.position.x,-13.2,1.0 if deck == 1 else 13.2)
+	player.position.z = clampf(player.position.z,-.8,2.5 if deck == 1 else 4.4)
 	if direction.length() > 0:
 		player.rotation.y = atan2(direction.x,direction.z)
-	var near := player.position.distance_to(Vector3(.4,0,-.6)) < 2.0
+	var near := deck == 0 and player.position.distance_to(Vector3(.4,0,-.6)) < 2.0
 	prompt.text = "E · Посмотреть заказ" if near and accepted else "E · Открыть терминал" if near else ""
-	if Input.is_key_pressed(KEY_ESCAPE): order_panel.hide()
-	if Input.is_key_pressed(KEY_E) and near and not order_panel.visible: order_panel.show()
+	if Vector2(player.position.x-.3,player.position.z-1.8).length() < 1.1:
+		prompt.text = "E · Лифт — " + ("в каюту наверху" if deck == 0 else "в гостиную")
+	if order_panel.visible:
+		prompt.text = ""
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if event.keycode == KEY_ESCAPE:
+		order_panel.hide()
+	if event.keycode != KEY_E or order_panel.visible:
+		return
+	if Vector2(player.position.x-.3,player.position.z-1.8).length() < 1.1:
+		deck = 1-deck
+		player.position = Vector3(.3,4.1 if deck == 1 else 0.0,1.8)
+	elif deck == 0 and player.position.distance_to(Vector3(.4,0,-.6)) < 2.0:
+		order_panel.show()
