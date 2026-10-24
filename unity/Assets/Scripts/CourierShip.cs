@@ -78,6 +78,8 @@ public sealed class CourierShip : MonoBehaviour
         gameObject.AddComponent<ShipWindowView>().Build(transform);
         Box(new Vector3(8,.9f,-3),new Vector3(6,1.8f,1.6f),"283949");
         for(int x=6;x<=10;x+=2) Box(new Vector3(x,1.85f,-3),new Vector3(1.2f,.08f,.8f),"87C5C8",true);
+        Box(new Vector3(.3f,.08f,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
+        Box(new Vector3(.3f,.14f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
         Box(new Vector3(.3f,4.1f,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
         Box(new Vector3(.3f,4.16f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
         for(int i=0;i<17;i++) Box(new Vector3(-13+i*.9f,7.4f-Mathf.Sin(i/16f*Mathf.PI)*.6f,1.6f),new Vector3(.15f,.2f,.15f),"FFD2A0",true);
@@ -86,6 +88,7 @@ public sealed class CourierShip : MonoBehaviour
         Lamp(new Vector3(7,4,-2),"BA83E8",4,12);
         GetComponent<ShipFurnishings>().Build();
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
+        gameObject.AddComponent<ShipWardrobe>().Build(transform);
         player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
         gameObject.AddComponent<ShipCameraFraming>().Initialize(camera, transform);
     }

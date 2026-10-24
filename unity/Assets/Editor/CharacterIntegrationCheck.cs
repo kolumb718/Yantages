@@ -124,7 +124,26 @@ public static class CharacterIntegrationCheck
         var atmosphere = Find("Hologram atmosphere").GetComponent<Renderer>();
         Require(atmosphere.sharedMaterial.shader.isSupported, "Hologram shader is unsupported.");
         Require(planet.position.y > 1 && planet.position.y < 2, "Hologram is misplaced.");
+        var platform = Find("Navigation hologram platform");
+        Require(platform.position.x > 5 && platform.position.z < 0, "Hologram must be next to the bridge window.");
+        Require(Vector3.Distance(platform.position, new Vector3(.3f, .08f, 1.8f)) > 3,
+            "Hologram still overlaps the lift.");
         Require(Find("Hanging wall cable").GetComponent<LineRenderer>().positionCount > 2, "Hanging wire has no curved geometry.");
+        var wardrobe = Find("Equipment wardrobe");
+        var equipment = wardrobe.GetComponentsInChildren<Renderer>();
+        Require(equipment.Length > 0, "Wardrobe has no geometry.");
+        var wardrobeBounds = equipment[0].bounds;
+        foreach (var renderer in equipment)
+        {
+            wardrobeBounds.Encapsulate(renderer.bounds);
+            foreach (var material in renderer.sharedMaterials)
+                Require(material != null && material.shader != null && material.shader.isSupported,
+                    "Wardrobe equipment has an unsupported material.");
+        }
+        Require(wardrobeBounds.min.y > -.05f && wardrobeBounds.max.y < 3.2f && wardrobeBounds.max.x < 13.4f
+            && wardrobeBounds.max.z < 3.2f, "Wardrobe does not fit inside the ship.");
+        foreach (var name in new[] { "Stored EVA suit", "Wardrobe helmet visor", "Wardrobe medkit",
+            "Wardrobe oxygen tank", "Wardrobe tool case" }) Find(name);
     }
 
     static void Capture(string name, bool close)
@@ -167,9 +186,15 @@ public static class CharacterIntegrationCheck
             }
             else if (name == "details-hologram")
             {
-                camera.transform.position = new Vector3(3.3f, 3.1f, 6.4f);
-                camera.transform.LookAt(new Vector3(.3f, 1.0f, 1.8f));
-                camera.fieldOfView = 44;
+                camera.transform.position = new Vector3(5.5f, 2.8f, 3.7f);
+                camera.transform.LookAt(new Vector3(7.8f, 1.05f, -.8f));
+                camera.fieldOfView = 36;
+            }
+            else if (name == "details-wardrobe")
+            {
+                camera.transform.position = new Vector3(13.7f, 2.5f, 7.2f);
+                camera.transform.LookAt(new Vector3(11.6f, 1.35f, 2.0f));
+                camera.fieldOfView = 40;
             }
             camera.targetTexture = target;
             camera.aspect = 1600f / 1000;
@@ -227,6 +252,7 @@ public static class CharacterIntegrationCheck
                 Capture("furniture-lounge", false);
                 Capture("details-window", false);
                 Capture("details-hologram", false);
+                Capture("details-wardrobe", false);
                 SessionState.SetFloat("Orbita.CharacterCheck.PlanetYaw", Find("Holographic planet").localEulerAngles.y);
                 var start = courier.position;
                 Invoke(ship, "MoveCourier", Vector3.right, 1f);
@@ -269,7 +295,7 @@ public static class CharacterIntegrationCheck
                 ValidateInteriorDetails();
                 SessionState.SetInt(StageKey, 0);
                 Directory.CreateDirectory("Captures");
-                File.WriteAllText("Captures/character-check.txt", "PASS: characters, furniture, materials, scale, floor placement, window bounds, Cyrillic lettering, hologram shader and rotation, movement, diagonal speed, lift both ways, owl deck following, terminal, Play Mode restart.\n");
+                File.WriteAllText("Captures/character-check.txt", "PASS: characters, furniture, wardrobe equipment and materials, window bounds, Cyrillic lettering, hologram window placement and rotation, movement, diagonal speed, lift both ways, owl deck following, terminal, Play Mode restart.\n");
                 Debug.Log("ORBITA_CHARACTER_CHECK_PASS");
                 EditorApplication.Exit(0);
             }

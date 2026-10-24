@@ -1,0 +1,1 @@
+PASS: characters, furniture, wardrobe equipment and materials, window bounds, Cyrillic lettering, hologram window placement and rotation, movement, diagonal speed, lift both ways, owl deck following, terminal, Play Mode restart.
