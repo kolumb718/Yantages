@@ -75,26 +75,17 @@ public sealed class CourierShip : MonoBehaviour
         // Bedroom and reading nook above.
         Box(new Vector3(-4.6f,4.6f,-2),new Vector3(1.5f,.9f,1.5f),"B37A88");
         Box(new Vector3(-4.6f,5.2f,-2.6f),new Vector3(1.5f,1.2f,.25f),"B37A88");
-        // Taipei-inspired dusk, windows and a tall neon skyline.
-        Box(new Vector3(8,4.5f,-4.8f),new Vector3(10,6,.1f),"674778",true);
-        for(int i=0;i<18;i++) {
-            float h=.7f+(i*7%11)*.32f, x=3.4f+i*.53f;
-            Box(new Vector3(x,1.5f+h/2,-4.65f),new Vector3(.45f,h,.08f),"292A44");
-            for(int j=0;j<6;j++) Box(new Vector3(x,1.6f+j*h/7,-4.59f),new Vector3(.24f,.04f,.02f),"EDA6CC",true);
-        }
-        Box(new Vector3(8,4.6f,-4.5f),new Vector3(.6f,5,.12f),"33314C");
-        Box(new Vector3(8,7.5f,-4.5f),new Vector3(.06f,1,.06f),"EDB0D6",true);
+        gameObject.AddComponent<ShipWindowView>().Build(transform);
         Box(new Vector3(8,.9f,-3),new Vector3(6,1.8f,1.6f),"283949");
         for(int x=6;x<=10;x+=2) Box(new Vector3(x,1.85f,-3),new Vector3(1.2f,.08f,.8f),"87C5C8",true);
-        foreach(float y in new[]{.08f,4.1f}) {
-            Box(new Vector3(.3f,y,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
-            Box(new Vector3(.3f,y+.06f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
-        }
+        Box(new Vector3(.3f,4.1f,1.8f),new Vector3(2.3f,.08f,2.1f),"8C729D");
+        Box(new Vector3(.3f,4.16f,2.86f),new Vector3(2.3f,.04f,.04f),"9CD8D2",true);
         for(int i=0;i<17;i++) Box(new Vector3(-13+i*.9f,7.4f-Mathf.Sin(i/16f*Mathf.PI)*.6f,1.6f),new Vector3(.15f,.2f,.15f),"FFD2A0",true);
         Lamp(new Vector3(-10,2,1),"FFC498",3,9);
         Lamp(new Vector3(-8,6,-1),"FFC498",3,9);
         Lamp(new Vector3(7,4,-2),"BA83E8",4,12);
         GetComponent<ShipFurnishings>().Build();
+        gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
         player=GetComponent<CourierCharacters>().CreateCourier(new Vector3(-4,0,.6f));
         gameObject.AddComponent<ShipCameraFraming>().Initialize(camera, transform);
     }

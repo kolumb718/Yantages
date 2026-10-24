@@ -104,6 +104,29 @@ public static class CharacterIntegrationCheck
         }
     }
 
+    static void ValidateInteriorDetails()
+    {
+        var window = Find("Panoramic city window");
+        var renderers = window.GetComponentsInChildren<Renderer>();
+        Require(renderers.Length > 0, "Window dressing has no visible geometry.");
+        var bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        Require(bounds.min.x >= 2.6f && bounds.max.x <= 13.4f && bounds.min.y >= 1.1f && bounds.max.y <= 7.9f,
+            "City geometry escapes the panoramic window.");
+        foreach (var name in new[] { "Ship name lettering", "Cabin deck sign", "Bridge sign" })
+        {
+            var label = Find(name).GetComponent<TextMesh>();
+            Require(label != null && label.font != null && label.font.HasCharacter('Я'), "Wall lettering has no Cyrillic font.");
+            var size = label.GetComponent<Renderer>().bounds.size;
+            Require(size.x < 10 && size.y < 1.3f, "Wall lettering is oversized: " + name);
+        }
+        var planet = Find("Holographic planet");
+        var atmosphere = Find("Hologram atmosphere").GetComponent<Renderer>();
+        Require(atmosphere.sharedMaterial.shader.isSupported, "Hologram shader is unsupported.");
+        Require(planet.position.y > 1 && planet.position.y < 2, "Hologram is misplaced.");
+        Require(Find("Hanging wall cable").GetComponent<LineRenderer>().positionCount > 2, "Hanging wire has no curved geometry.");
+    }
+
     static void Capture(string name, bool close)
     {
         var camera = Camera.main;
@@ -136,9 +159,21 @@ public static class CharacterIntegrationCheck
                 camera.transform.LookAt(new Vector3(-10.2f, .65f, -1.8f));
                 camera.fieldOfView = 67;
             }
+            else if (name == "details-window")
+            {
+                camera.transform.position = new Vector3(10.0f, 5.2f, 5.5f);
+                camera.transform.LookAt(new Vector3(8, 4.45f, -4.45f));
+                camera.fieldOfView = 44;
+            }
+            else if (name == "details-hologram")
+            {
+                camera.transform.position = new Vector3(3.3f, 3.1f, 6.4f);
+                camera.transform.LookAt(new Vector3(.3f, 1.0f, 1.8f));
+                camera.fieldOfView = 44;
+            }
             camera.targetTexture = target;
             camera.aspect = 1600f / 1000;
-            if (!close && !name.StartsWith("furniture-"))
+            if (!close && !name.StartsWith("furniture-") && !name.StartsWith("details-"))
                 UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
             camera.Render();
             RenderTexture.active = target;
@@ -185,10 +220,14 @@ public static class CharacterIntegrationCheck
             {
                 ValidateCharacters();
                 ValidateFurnishings();
+                ValidateInteriorDetails();
                 Capture("characters-game", false);
                 Capture("characters-close", true);
                 Capture("furniture-bedroom", false);
                 Capture("furniture-lounge", false);
+                Capture("details-window", false);
+                Capture("details-hologram", false);
+                SessionState.SetFloat("Orbita.CharacterCheck.PlanetYaw", Find("Holographic planet").localEulerAngles.y);
                 var start = courier.position;
                 Invoke(ship, "MoveCourier", Vector3.right, 1f);
                 Require(Mathf.Abs(courier.position.x - start.x - 1) < .001f, "Courier movement failed.");
@@ -205,6 +244,8 @@ public static class CharacterIntegrationCheck
             }
             else if (stage == 2)
             {
+                Require(Mathf.Abs(Mathf.DeltaAngle(SessionState.GetFloat("Orbita.CharacterCheck.PlanetYaw", 0),
+                    Find("Holographic planet").localEulerAngles.y)) > .01f, "Hologram planet does not rotate.");
                 Require(Mathf.Abs(owl.position.y - courier.position.y - 1.05f) < .1f, "Owl did not follow to upper deck.");
                 Capture("characters-upper-deck", false);
                 Invoke(ship, "Interact");
@@ -225,9 +266,10 @@ public static class CharacterIntegrationCheck
             {
                 ValidateCharacters();
                 ValidateFurnishings();
+                ValidateInteriorDetails();
                 SessionState.SetInt(StageKey, 0);
                 Directory.CreateDirectory("Captures");
-                File.WriteAllText("Captures/character-check.txt", "PASS: character and furniture materials, scale, furniture floor placement, movement, diagonal speed, bounds, lift both ways, owl deck following, terminal, Play Mode restart.\n");
+                File.WriteAllText("Captures/character-check.txt", "PASS: characters, furniture, materials, scale, floor placement, window bounds, Cyrillic lettering, hologram shader and rotation, movement, diagonal speed, lift both ways, owl deck following, terminal, Play Mode restart.\n");
                 Debug.Log("ORBITA_CHARACTER_CHECK_PASS");
                 EditorApplication.Exit(0);
             }

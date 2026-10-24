@@ -38,3 +38,5 @@
 - [CHARACTERS_UNITY.md](CHARACTERS_UNITY.md) — импорт героини и совы, prefab и проверка в игре.
 
 - [FURNITURE.md](FURNITURE.md) — мебель и растения по одобренным фотореференсам.
+
+- [SHIP_DETAILS.md](SHIP_DETAILS.md) — детальный вид города, надписи, проводка и голограмма планеты.
