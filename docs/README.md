@@ -26,3 +26,5 @@
 - [REFERENCES.md](REFERENCES.md) — разбор направления и пять пар курьер/сова.
 
 - [UNITY_SETUP.md](UNITY_SETUP.md) — закреплённый редактор, MCP, запуск и результаты проверки.
+
+- [BLENDER_SETUP.md](BLENDER_SETUP.md) — Blender, локальный MCP, запуск и проверки.

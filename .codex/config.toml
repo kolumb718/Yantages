@@ -2,3 +2,14 @@
 url = "http://127.0.0.1:8080/mcp"
 startup_timeout_sec = 30
 tool_timeout_sec = 120
+
+[mcp_servers.blender]
+command = "W:/Planets/Yantages/.local/blender-mcp-env/Scripts/mcp-for-blender.exe"
+startup_timeout_sec = 60
+tool_timeout_sec = 120
+
+[mcp_servers.blender.env]
+BLENDER_HOST = "127.0.0.1"
+BLENDER_PORT = "9876"
+DISABLE_TELEMETRY = "1"
+PYTHONUTF8 = "1"

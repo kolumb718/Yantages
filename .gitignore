@@ -44,3 +44,7 @@ godot/.godot/
 
 # Keep Assets (including .meta), ProjectSettings, Packages/manifest.json
 # and Packages/packages-lock.json tracked for reproducible imports.
+
+# Blender backup files; keep original .blend source assets
+*.blend[0-9]
+*.blend[0-9][0-9]
