@@ -12,6 +12,7 @@ public sealed class CourierInput : IDisposable
 
     readonly InputActionMap map = new InputActionMap("Courier");
     readonly InputAction move;
+    readonly InputAction mouseLook, stickLook, orbitHold, scroll;
     readonly InputAction[] buttons;
 
     public bool UsingGamepad { get; private set; }
@@ -27,6 +28,10 @@ public sealed class CourierInput : IDisposable
             .With("Left", "<Keyboard>/leftArrow", KeyboardGroup).With("Right", "<Keyboard>/rightArrow", KeyboardGroup);
         move.AddBinding("<Gamepad>/leftStick", groups: GamepadGroup);
         move.AddBinding("<Gamepad>/dpad", groups: GamepadGroup);
+        mouseLook = map.AddAction("MouseLook",InputActionType.Value,"<Mouse>/delta");
+        stickLook = map.AddAction("StickLook",InputActionType.Value,"<Gamepad>/rightStick");
+        orbitHold = map.AddAction("OrbitHold",InputActionType.Button,"<Mouse>/rightButton");
+        scroll = map.AddAction("Zoom",InputActionType.Value,"<Mouse>/scroll/y");
 
         // Order matches CourierAction.
         buttons = new[]
@@ -55,6 +60,10 @@ public sealed class CourierInput : IDisposable
 
     // Screen-space intent: x to the right, y away from the camera; diagonals are normalised.
     public Vector2 Move => Vector2.ClampMagnitude(move.ReadValue<Vector2>(), 1);
+    public Vector2 LookDelta(float deltaTime) =>
+        (orbitHold.IsPressed() ? mouseLook.ReadValue<Vector2>()*.12f : Vector2.zero)
+        + stickLook.ReadValue<Vector2>()*(120*deltaTime);
+    public float ZoomDelta => -scroll.ReadValue<float>()*.0025f;
     public bool Held(CourierAction action) => buttons[(int)action].IsPressed();
     public bool Pressed(CourierAction action) => buttons[(int)action].WasPressedThisFrame();
 

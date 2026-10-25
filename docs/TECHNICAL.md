@@ -13,7 +13,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/Input/CourierInput.cs | Input System: действия клавиатуры и геймпада, подписи клавиш активного устройства |
 | unity/Assets/Scripts/Ship/ | ShipLayout — все размеры корабля; CourierMotor и FloorSweep — ходьба, границы и мебель-препятствия; OrderTerminal — заказ; ShipInterior — корпус, встроенная мебель и свет |
 | unity/Assets/Scripts/Ship/Lift/ | ShipLift — поездка, пассажир, плавные двери, стены шахты; GlassLiftVisuals — стеклянная шахта и индикаторы |
-| unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Кадрирование дома/ангара, camera-window слежение (C — обзор), видимость этажей, вызов параллакса окна |
+| unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Третье лицо: орбита, дистанция, приближение у препятствий; C — общий план; видимость этажей и параллакс |
 | unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, клетка совы OwlAviary, размещение мебели из prefab |
 | unity/Assets/Scripts/Characters/ | CourierCharacters — создание персонажей и скорость анимации Кристи; OwlCompanion — полёты, клетка, лифт |
 | unity/Assets/Editor/AnimatedCharacterSetup.cs, GaitClips.cs | Импорт риг-моделей, humanoid-аватар, генерация ходьбы и бега, контроллеры и prefab |
@@ -25,6 +25,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Editor/CharacterSetup.cs | Подготовка персонажей и привязка в Ship |
 | unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode, лифта, ангара и рендеров |
 | unity/Assets/Editor/ShipSystemsCheck.cs | Batch-проверка камеры, ввода (клавиатура и виртуальный геймпад), препятствий, дверей лифта, шейдеров сборки, анимации ходьбы/бега и отдыха совы в клетке |
+| unity/Assets/Editor/GaitDirectionAudit.cs | Реальное семплирование направления опорной стопы: контроллер и HumanPoseHandler |
 | unity/Assets/Editor/ProjectSetup.cs | Создание сцены при первом импорте |
 | unity/Packages/manifest.json | Минимальные зависимости модулей |
 | godot/ | Предыдущий Godot-прототип |

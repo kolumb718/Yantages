@@ -1,0 +1,4 @@
+CONTROLLER_Walk humanMotion=True duration=1,000 forwardToeZ=0,0365 footHeight=0,0524..0,2185 stanceDz=-0,5347 stanceSamples=43 direction=FORWARD right:footHeight=0,0622..0,2396 stanceDz=-0,8655 stanceSamples=43 direction=FORWARD
+MUSCLES_Walk humanMotion=True duration=1,000 forwardToeZ=0,0365 footHeight=0,1228..0,2889 stanceDz=-0,5347 stanceSamples=43 direction=FORWARD right:footHeight=0,1326..0,3100 stanceDz=-0,8655 stanceSamples=43 direction=FORWARD
+CONTROLLER_Run humanMotion=True duration=0,660 forwardToeZ=-0,0099 footHeight=0,0614..0,4586 stanceDz=-1,0882 stanceSamples=43 direction=FORWARD right:footHeight=0,0770..0,4831 stanceDz=-1,5034 stanceSamples=43 direction=FORWARD
+MUSCLES_Run humanMotion=True duration=0,660 forwardToeZ=-0,0099 footHeight=0,1318..0,5290 stanceDz=-1,0882 stanceSamples=43 direction=FORWARD right:footHeight=0,1474..0,5535 stanceDz=-1,5034 stanceSamples=43 direction=FORWARD

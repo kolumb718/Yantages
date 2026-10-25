@@ -15,6 +15,7 @@ public static class ShipSystemsCheck
     const string StageKey = "Orbita.ShipSystems.Stage";
     const string Report = "Captures/ship-systems-check.txt";
     static double waitUntil;
+    static Keyboard keyboard;
 
     static ShipSystemsCheck()
     {
@@ -45,6 +46,7 @@ public static class ShipSystemsCheck
 
     static void Finish(int code)
     {
+        if (keyboard != null) { InputSystem.RemoveDevice(keyboard); keyboard = null; }
         SessionState.SetInt(StageKey, 0);
         EditorApplication.update -= Tick;
         Log(code == 0 ? "ORBITA_SHIP_SYSTEMS_PASS" : "ORBITA_SHIP_SYSTEMS_FAIL");
@@ -138,20 +140,30 @@ public static class ShipSystemsCheck
             {
                 CheckBuildSafety();
                 CheckInput(ship);
+                CheckScaleAndOrbit(ship, framing);
                 var screen = OnScreen(camera, courier);
                 Log("follow start: camera " + camera.transform.position + " courier screen " + screen);
                 Require(Mathf.Abs(screen.x) <= .32f && Mathf.Abs(screen.y) <= .26f, "Courier starts outside the camera window.");
                 Capture("ship-systems-follow");
                 SessionState.SetString("Orbita.ShipSystems.Camera", JsonUtility.ToJson(camera.transform.position));
-                ship.Motor.Move(Vector3.right, .3f);
+                InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+                InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+                keyboard = InputSystem.AddDevice<Keyboard>();
+                SessionState.SetString("Orbita.Audit.Start",JsonUtility.ToJson(courier.position));
+                SessionState.SetString("Orbita.Audit.Right",JsonUtility.ToJson(Vector3.ProjectOnPlane(camera.transform.right,Vector3.up).normalized));
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.D));
                 Wait(1, 3);
             }
             else if (stage == 3)
             {
                 var start = JsonUtility.FromJson<Vector3>(SessionState.GetString("Orbita.ShipSystems.Camera", ""));
                 float drift = Vector3.Distance(start, camera.transform.position);
+                var walked = courier.position-JsonUtility.FromJson<Vector3>(SessionState.GetString("Orbita.Audit.Start",""));
+                var right = JsonUtility.FromJson<Vector3>(SessionState.GetString("Orbita.Audit.Right",""));
+                Require(Vector3.Dot(walked,right) > .2f,"Actual keyboard D does not move to camera-right.");
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState());
                 Log("dead zone drift " + drift.ToString("F4"));
-                Require(drift < .01f, "Camera moved while the courier stayed inside the window.");
+                Require(drift > .1f, "Third-person camera does not follow a small movement.");
                 ship.Motor.Move(Vector3.back, 1.2f);
                 ship.Motor.Move(Vector3.right, 12);
                 Wait(2, 4);
@@ -163,14 +175,16 @@ public static class ShipSystemsCheck
                 float pan = Vector3.Dot(camera.transform.position - start, camera.transform.right);
                 Log("walk to bridge: courier x " + courier.position.x.ToString("F2") + " pan " + pan.ToString("F2") + " screen " + screen);
                 Require(Mathf.Abs(pan) > 1, "Camera did not pan when the courier pushed the window edge.");
-                Require(Mathf.Abs(screen.x) <= .33f && Mathf.Abs(screen.x) > .2f, "Courier is not held at the window edge.");
+                Require(Mathf.Abs(screen.x) < .08f, "Third-person camera lost the courier at the centre.");
                 Capture("ship-systems-bridge");
                 CheckObstacles(ship);
-                framing.Follow = false;
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.C));
                 Wait(2.5, 5);
             }
             else if (stage == 5)
             {
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState());
+                Require(!framing.Follow,"Keyboard C did not select overview mode.");
                 var overview = framing.OverviewPosition;
                 float error = Vector3.Distance(camera.transform.position, overview);
                 Log("overview error " + error.ToString("F4"));
@@ -199,6 +213,30 @@ public static class ShipSystemsCheck
                 Log("cabin arrival screen " + screen);
                 Require(Mathf.Abs(screen.x) < .6f && Mathf.Abs(screen.y) < .6f, "Camera lost the courier after the lift ride.");
                 Capture("ship-systems-cabin");
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.R));
+                Wait(.3,14);
+            }
+            else if (stage == 14)
+            {
+                InputSystem.QueueStateEvent(keyboard,new UnityEngine.InputSystem.LowLevel.KeyboardState());
+                Require(ship.Lift.IsRiding && ship.Lift.DestinationDeck == ShipLayout.HangarDeck,
+                    "R from the cabin does not go directly to the hangar.");
+                Wait(8,12);
+            }
+            else if (stage == 12)
+            {
+                if (ship.Lift.IsMoving) return;
+                Require(ship.Deck == ShipLayout.HangarDeck, "Cabin-to-hangar ride did not arrive.");
+                framing.UpdateDeckView();
+                Capture("audit-third-person-hangar");
+                ship.Interact();
+                Require(ship.Lift.IsRiding && ship.Lift.DestinationDeck == ShipLayout.LivingDeck,
+                    "Cannot return home after the direct descent.");
+                Wait(8,13);
+            }
+            else if (stage == 13)
+            {
+                if (ship.Lift.IsMoving) return;
                 // Back on the living deck for the locomotion close-ups.
                 courier.position = new Vector3(-9, 0, 2.2f);
                 ship.Motor.Deck = ShipLayout.LivingDeck;
@@ -309,13 +347,66 @@ public static class ShipSystemsCheck
         }
     }
 
+    static Bounds BoundsOf(string name)
+    {
+        var obj = GameObject.Find(name);
+        Require(obj != null,"Missing scale reference: "+name);
+        var renderers = obj.GetComponentsInChildren<Renderer>();
+        var bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        return bounds;
+    }
+
+    static void CheckScaleAndOrbit(CourierShip ship, ShipCameraFraming camera)
+    {
+        foreach (var pair in new[] {
+            ("Terracotta sofa",ShipLayout.SofaSize),
+            ("Cabin bed",new Vector3(ShipLayout.BedSize.z,ShipLayout.BedSize.y,ShipLayout.BedSize.x)),
+            ("Wood bookshelf",ShipLayout.BookshelfSize) })
+        {
+            var bounds = BoundsOf(pair.Item1);
+            Log(pair.Item1+" measured metres "+bounds.size);
+            Require(Vector3.Distance(bounds.size,pair.Item2)<.035f,"Incorrect furniture proportions: "+pair.Item1);
+        }
+        var window = BoundsOf("Panoramic window frame");
+        Require(Mathf.Abs(window.min.y)<.015f && Mathf.Abs(window.max.y-5)<.015f,"Window is not five metres high from the floor.");
+        Require(GameObject.Find("Navigation console")==null && GameObject.Find("Navigation display")==null,
+            "The rectangle with three white displays is still present.");
+        Require(Mathf.Abs(BoundsOf("Stored EVA suit").size.y-ShipLayout.EvaSuitHeight)<.03f,"EVA suit has incorrect human scale.");
+        Require(Mathf.Abs(BoundsOf("Order terminal").max.y-ShipLayout.TerminalHeight)<.03f,"Terminal is not human-sized.");
+        var view = Camera.main;
+        camera.UpdateDeckView();
+        var target = ship.Motor.Courier.position+Vector3.up*ShipLayout.ThirdPersonFocusHeight;
+        float range = Vector3.Distance(view.transform.position,target);
+        Require(range>.3f && range<6.1f,"Camera is not in third person.");
+        camera.ApplyLook(new Vector2(90,0),0); camera.UpdateDeckView();
+        var right = Vector3.ProjectOnPlane(view.transform.right,Vector3.up).normalized;
+        var forward = Vector3.ProjectOnPlane(view.transform.forward,Vector3.up).normalized;
+        Require(Vector3.Dot(ship.MovementDirection(Vector2.right),right)>.99f
+            && Vector3.Dot(ship.MovementDirection(Vector2.up),forward)>.99f,"Orbit mirrors camera-relative movement.");
+        Capture("audit-third-person-orbit");
+        camera.ApplyLook(new Vector2(-90,0),0); camera.UpdateDeckView();
+        Capture("audit-third-person-living");
+        var saved = ship.Motor.Courier.position;
+        ship.Motor.Courier.position = new Vector3(-12,0,-3.6f);
+        camera.ApplyLook(new Vector2(180,0),0); camera.UpdateDeckView();
+        Require(view.transform.position.z>-4.85f,"Third-person camera passed through the rear wall.");
+        Require(Vector3.Distance(view.transform.position,ship.Motor.Courier.position+Vector3.up*ShipLayout.ThirdPersonFocusHeight)<3,
+            "Camera did not shorten its boom at the wall.");
+        camera.ApplyLook(new Vector2(-180,0),0);
+        ship.Motor.Courier.position = saved; camera.UpdateDeckView();
+        Log("scale and orbit: five-metre floor-level window, furniture XYZ, terminal, EVA suit, orbit controls, wall clearance PASS");
+    }
+
     static void CheckObstacles(CourierShip ship)
     {
         var courier = ship.Motor.Courier;
         courier.position = new Vector3(-5, 0, .6f);
         ship.Motor.Move(Vector3.left, 6);
         Log("walk into coffee table stops at x " + courier.position.x.ToString("F2"));
-        Require(courier.position.x > -7.6f, "Courier walked through the lounge coffee table.");
+        var tableBounds = GameObject.Find("Lounge coffee table").GetComponentInChildren<Renderer>().bounds;
+        Require(courier.position.x >= tableBounds.max.x+CourierMotor.Radius-.03f,
+            "Courier walked through the lounge coffee table.");
         courier.position = new Vector3(11.6f, 0, 4.2f);
         ship.Motor.Move(Vector3.back, 3);
         Log("walk into wardrobe stops at z " + courier.position.z.ToString("F2"));

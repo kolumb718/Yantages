@@ -19,12 +19,12 @@ public static class FurnitureSetup
                 throw new InvalidOperationException("Save all open scenes before preparing furniture assets.");
 
         AssetDatabase.Refresh();
-        var bed = CharacterSetup.BuildPrefab("CabinBed", 1.55f, Root);
-        var bookshelf = CharacterSetup.BuildPrefab("WoodBookshelf", 2.35f, Root);
-        var sofa = CharacterSetup.BuildPrefab("TerracottaSofa", 1.10f, Root);
-        var monstera = CharacterSetup.BuildPrefab("Monstera", 1.55f, Root);
-        var snakePlant = CharacterSetup.BuildPrefab("SnakePlant", 1.20f, Root);
-        var pothos = CharacterSetup.BuildPrefab("Pothos", .72f, Root);
+        var bed = SizedPrefab("CabinBed", ShipLayout.BedSize);
+        var bookshelf = SizedPrefab("WoodBookshelf", ShipLayout.BookshelfSize);
+        var sofa = SizedPrefab("TerracottaSofa", ShipLayout.SofaSize);
+        var monstera = CharacterSetup.BuildPrefab("Monstera", ShipLayout.MonsteraHeight, Root);
+        var snakePlant = CharacterSetup.BuildPrefab("SnakePlant", ShipLayout.SnakePlantHeight, Root);
+        var pothos = CharacterSetup.BuildPrefab("Pothos", ShipLayout.PothosHeight, Root);
 
         var scene = EditorSceneManager.OpenScene("Assets/Scenes/Ship.unity", OpenSceneMode.Single);
         var ship = UnityEngine.Object.FindFirstObjectByType<CourierShip>();
@@ -43,5 +43,29 @@ public static class FurnitureSetup
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
         Debug.Log("Orbita: cabin furniture prefabs assigned to Ship scene.");
+    }
+
+    // Furniture is measured in all three axes: its height alone does not define a usable bed.
+    static GameObject SizedPrefab(string name, Vector3 dimensions)
+    {
+        var prefab = CharacterSetup.BuildPrefab(name, dimensions.y, Root);
+        string path = AssetDatabase.GetAssetPath(prefab);
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var visual = root.transform.GetChild(0);
+            var renderers = visual.GetComponentsInChildren<Renderer>();
+            var bounds = renderers[0].bounds;
+            foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+            var ratio = new Vector3(dimensions.x/bounds.size.x, dimensions.y/bounds.size.y, dimensions.z/bounds.size.z);
+            // A separate identity transform scales Unity's axes even if the FBX root is rotated.
+            var metreScale = new GameObject("Metre scale").transform;
+            metreScale.SetParent(root.transform, false);
+            visual.SetParent(metreScale, false);
+            metreScale.localScale = ratio;
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        return AssetDatabase.LoadAssetAtPath<GameObject>(path);
     }
 }

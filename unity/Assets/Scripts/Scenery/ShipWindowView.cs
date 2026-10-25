@@ -8,6 +8,7 @@ public sealed class ShipWindowView : MonoBehaviour
     readonly List<Transform> layers = new List<Transform>();
     readonly float[] depthWeights = { .16f, .075f, .025f, .075f, .04f };
     static readonly int WorldToWindow = Shader.PropertyToID("_WorldToWindow");
+    static readonly int WindowAperture = Shader.PropertyToID("_WindowAperture");
     Vector3 referenceCamera;
     bool hasReference;
 
@@ -48,6 +49,7 @@ public sealed class ShipWindowView : MonoBehaviour
         windowRoot = root;
         root.SetParent(ship, false);
         Shader.SetGlobalMatrix(WorldToWindow, root.worldToLocalMatrix);
+        Shader.SetGlobalVector(WindowAperture, ShipLayout.WindowAperture);
 
         var far = Flat("Distant plum skyline", "675372");
         var middle = Flat("Midcity blue plum", "393B56");
@@ -169,8 +171,8 @@ public sealed class ShipWindowView : MonoBehaviour
         var material = new Material(ShipShaders.Unlit) { name = "Muted dusk sky", mainTexture = texture };
         skyMaterial = material;
         var mesh = new Mesh { name = "Window sky quad" };
-        mesh.vertices = new[] { new Vector3(3.08f, 1.58f, -4.775f), new Vector3(3.08f, 7.42f, -4.775f),
-            new Vector3(12.92f, 7.42f, -4.775f), new Vector3(12.92f, 1.58f, -4.775f) };
+        mesh.vertices = new[] { new Vector3(3.08f, ShipLayout.WindowY(1.58f), -4.775f), new Vector3(3.08f, ShipLayout.WindowY(7.42f), -4.775f),
+            new Vector3(12.92f, ShipLayout.WindowY(7.42f), -4.775f), new Vector3(12.92f, ShipLayout.WindowY(1.58f), -4.775f) };
         mesh.uv = new[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0) };
         mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
         mesh.RecalculateNormals();
@@ -253,6 +255,13 @@ public sealed class ShipWindowView : MonoBehaviour
         public Transform Create(string name, Transform root, List<Material> materials)
         {
             var mesh = new Mesh { name = name };
+            // Keep the skyline, landmark and frame composed together when changing window height.
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var point = vertices[i];
+                point.y = ShipLayout.WindowY(point.y);
+                vertices[i] = point;
+            }
             mesh.SetVertices(vertices);
             mesh.subMeshCount = triangles.Length;
             for (int i = 0; i < triangles.Length; i++) mesh.SetTriangles(triangles[i], i);

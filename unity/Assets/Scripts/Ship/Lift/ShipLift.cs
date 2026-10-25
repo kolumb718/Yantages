@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public enum LiftPrompt { None, RidingToHangar, RidingToCabin, RidingToLounge, Busy, Call, EnterFromLeft, LoungeChoices, ToLounge }
+public enum LiftPrompt { None, RidingToHangar, RidingToCabin, RidingToLounge, Busy, Call, EnterFromLeft, LoungeChoices, ToLounge, CabinChoices }
 
 // Three-stop lift: hangar (-1), living deck (0), cabin (1). Owns travel, passengers and the glass walls.
 public sealed class ShipLift : MonoBehaviour
@@ -23,7 +23,8 @@ public sealed class ShipLift : MonoBehaviour
     public bool IsMoving { get; private set; }
     public bool IsRiding => IsMoving && carrying;
     public int CurrentDeck { get; private set; }
-    public float Progress => Mathf.Clamp01((elapsed-ClosingSeconds)/TravelSeconds);
+    public float DurationSeconds { get; private set; } = TravelSeconds;
+    public float Progress => Mathf.Clamp01((elapsed-ClosingSeconds)/DurationSeconds);
     public Transform Platform => visuals.Platform;
     public GlassLiftVisuals Visuals => visuals;
     public int DestinationDeck => destination;
@@ -55,6 +56,7 @@ public sealed class ShipLift : MonoBehaviour
     public bool TryUse(int passengerDeck, int direction = 1)
     {
         if (passengerDeck < ShipLayout.HangarDeck || passengerDeck > ShipLayout.CabinDeck) return false;
+        if (direction < 0 && passengerDeck == ShipLayout.HangarDeck) return false;
         if (IsMoving || !IsNear(courier.position, passengerDeck)) return false;
         if (CurrentDeck != passengerDeck)
         {
@@ -62,8 +64,11 @@ public sealed class ShipLift : MonoBehaviour
             return true;
         }
         if (!Inside(courier.position)) return false;
-        Begin(passengerDeck == ShipLayout.LivingDeck ? (direction < 0 ? ShipLayout.HangarDeck : ShipLayout.CabinDeck)
-            : ShipLayout.LivingDeck, true);
+        // Descend selects the hangar from either home floor; Interact keeps the shorter
+        // cabin/lounge route and returns a hangar passenger to the living deck.
+        int target = direction < 0 ? ShipLayout.HangarDeck
+            : passengerDeck == ShipLayout.LivingDeck ? ShipLayout.CabinDeck : ShipLayout.LivingDeck;
+        Begin(target, true);
         return true;
     }
 
@@ -74,6 +79,9 @@ public sealed class ShipLift : MonoBehaviour
         carrying = withPassenger;
         elapsed = 0;
         startHeight = Platform.localPosition.y;
+        // Keep the same slow average pace on the longer underground/direct route.
+        DurationSeconds = Mathf.Max(TravelSeconds,
+            Mathf.Abs(ShipLayout.FloorHeight(target)-startHeight)/ShipLayout.DeckHeight*TravelSeconds);
         IsMoving = true;
         visuals.SetIndicators(CurrentDeck, true);
         SetCabinTravel(carrying);
@@ -103,7 +111,7 @@ public sealed class ShipLift : MonoBehaviour
         position.y = Mathf.Lerp(startHeight, ShipLayout.FloorHeight(destination), Mathf.SmoothStep(0, 1, Progress));
         Platform.localPosition = position;
         UpdateDoors();
-        if (elapsed < ClosingSeconds+TravelSeconds+OpeningSeconds) return;
+        if (elapsed < ClosingSeconds+DurationSeconds+OpeningSeconds) return;
 
         CurrentDeck = destination;
         IsMoving = false;
@@ -125,7 +133,7 @@ public sealed class ShipLift : MonoBehaviour
     {
         if (!IsMoving) return level == CurrentDeck ? 1 : 0;
         if (level == origin && elapsed < ClosingSeconds) return 1-elapsed/ClosingSeconds;
-        if (level == destination) return Mathf.Clamp01((elapsed-ClosingSeconds-TravelSeconds)/OpeningSeconds);
+        if (level == destination) return Mathf.Clamp01((elapsed-ClosingSeconds-DurationSeconds)/OpeningSeconds);
         return 0;
     }
 
@@ -143,7 +151,8 @@ public sealed class ShipLift : MonoBehaviour
         if (IsMoving) return LiftPrompt.Busy;
         if (CurrentDeck != deck) return LiftPrompt.Call;
         if (!Inside(position)) return LiftPrompt.EnterFromLeft;
-        return deck == ShipLayout.LivingDeck ? LiftPrompt.LoungeChoices : LiftPrompt.ToLounge;
+        return deck == ShipLayout.LivingDeck ? LiftPrompt.LoungeChoices
+            : deck == ShipLayout.CabinDeck ? LiftPrompt.CabinChoices : LiftPrompt.ToLounge;
     }
 
     // Glass and closed doors as swept walls. The open doorway is on the left wall:

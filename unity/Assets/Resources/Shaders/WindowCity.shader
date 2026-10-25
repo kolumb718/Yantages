@@ -12,6 +12,7 @@ Shader "Orbita/WindowCity"
             #include "UnityCG.cginc"
             fixed4 _Color;
             float4x4 _WorldToWindow;
+            float4 _WindowAperture;
             struct v2f { float4 vertex : SV_POSITION; float2 window : TEXCOORD0; };
             v2f vert(appdata_base v)
             {
@@ -23,8 +24,8 @@ Shader "Orbita/WindowCity"
             fixed4 frag(v2f i) : SV_Target
             {
                 // Fixed aperture prevents moving buildings from spilling onto the walls.
-                clip(i.window - float2(3.12, 1.62));
-                clip(float2(12.88, 7.38) - i.window);
+                clip(i.window - _WindowAperture.xy);
+                clip(_WindowAperture.zw - i.window);
                 return _Color;
             }
             ENDCG

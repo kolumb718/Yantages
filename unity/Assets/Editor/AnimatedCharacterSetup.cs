@@ -15,7 +15,7 @@ public static class AnimatedCharacterSetup
     const string Root = "Assets/Art/Characters/";
     const string Kristi = Root + "KristiWorker/";
     const string Owl = Root + "WatcherOwl/";
-    public const float KristiHeight = 1.72f;
+    public const float KristiHeight = ShipLayout.CourierHeight;
     public const float OwlHeight = .72f;
 
     [MenuItem("Orbita/Prepare animated characters")]
@@ -86,7 +86,9 @@ public static class AnimatedCharacterSetup
         locomotion.AddChild(idle, 0);
         locomotion.AddChild(walk, CourierCharacters.WalkCycleSpeed);
         locomotion.AddChild(run, CourierCharacters.RunCycleSpeed);
-        machine.AddState("Locomotion").motion = locomotion;
+        var locomotionState = machine.AddState("Locomotion");
+        locomotionState.motion = locomotion;
+        machine.defaultState = locomotionState;
 
         return BuildPrefab(Kristi + "KristiWorker.prefab", model, KristiHeight, avatar, controller, null);
     }
@@ -151,7 +153,9 @@ public static class AnimatedCharacterSetup
         var assets = AssetDatabase.LoadAllAssetsAtPath(model);
         var fly = assets.OfType<AnimationClip>().First(c => c.name == "Fly");
         var controller = Controller(Owl + "WatcherOwl.controller", null, out var machine);
-        machine.AddState("Fly").motion = fly;
+        var flightState = machine.AddState("Fly");
+        flightState.motion = fly;
+        machine.defaultState = flightState;
         // Duplicate shells and the inverted-hull outline only render correctly in the source tool.
         bool Hidden(string name) => name.Contains(".001") || name.Contains("outline");
         return BuildPrefab(Owl + "WatcherOwl.prefab", model, OwlHeight, assets.OfType<Avatar>().FirstOrDefault(),
@@ -213,10 +217,15 @@ public static class AnimatedCharacterSetup
 
     static AnimatorController Controller(string path, string floatParameter, out AnimatorStateMachine machine)
     {
-        AssetDatabase.DeleteAsset(path);
-        var controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+        if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+        controller.parameters = Array.Empty<AnimatorControllerParameter>();
         if (floatParameter != null) controller.AddParameter(floatParameter, AnimatorControllerParameterType.Float);
         machine = controller.layers[0].stateMachine;
+        foreach (var state in machine.states) machine.RemoveState(state.state);
+        foreach (var tree in AssetDatabase.LoadAllAssetsAtPath(path).OfType<BlendTree>())
+            UnityEngine.Object.DestroyImmediate(tree, true);
+        EditorUtility.SetDirty(controller);
         return controller;
     }
 

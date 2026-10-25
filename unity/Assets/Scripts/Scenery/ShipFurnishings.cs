@@ -20,13 +20,13 @@ public sealed class ShipFurnishings : MonoBehaviour
 
         var furnishings = new GameObject("Cabin furnishings").transform;
         furnishings.SetParent(transform, false);
-        Place(cabinBedPrefab, "Cabin bed", new Vector3(-10, 4.10f, -2.5f), 90, furnishings);
-        Place(bookshelfPrefab, "Wood bookshelf", new Vector3(-6, 4.10f, -4.1f), 0, furnishings);
+        Place(cabinBedPrefab, "Cabin bed", new Vector3(-10, ShipLayout.DeckHeight, -2.5f), 90, furnishings);
+        Place(bookshelfPrefab, "Wood bookshelf", new Vector3(-6, ShipLayout.DeckHeight, -4.1f), 0, furnishings);
         Place(sofaPrefab, "Terracotta sofa", new Vector3(-10, 0, -1.8f), 0, furnishings);
         Place(monsteraPrefab, "Monstera downstairs", new Vector3(-13, 0, 2), -15, furnishings);
         Place(snakePlantPrefab, "Snake plant bridge", new Vector3(12, 0, -2), 10, furnishings);
-        Place(monsteraPrefab, "Monstera upstairs", new Vector3(-12, 4.10f, 1.5f), 20, furnishings);
-        Place(pothosPrefab, "Pothos reading nook", new Vector3(-7.9f, 4.10f, -3.6f), -20, furnishings);
+        Place(monsteraPrefab, "Monstera upstairs", new Vector3(-12, ShipLayout.DeckHeight, 1.5f), 20, furnishings);
+        Place(pothosPrefab, "Pothos reading nook", new Vector3(-7.9f, ShipLayout.DeckHeight, -3.6f), -20, furnishings);
         built = true;
     }
 

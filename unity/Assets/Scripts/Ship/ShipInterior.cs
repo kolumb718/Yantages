@@ -22,15 +22,16 @@ public sealed class ShipInterior : MonoBehaviour
         BuildStructure();
         Obstacles = new[]
         {
-            Furniture("Lounge coffee table", "B98E77", new Vector3(-9, .6f, .6f), new Vector3(2.5f, .18f, 1.4f), .51f),
-            Block("Galley counter", new Vector3(-3, .9f, -3.8f), new Vector3(4.5f, 1.8f, 1.5f), "526467",
-                ("Galley worktop", new Vector3(-3, 1.85f, -3.8f), new Vector3(4.7f, .12f, 1.7f), "C6AA90")),
+            Furniture("Lounge coffee table", "B98E77", new Vector3(-9, ShipLayout.CoffeeTableTop-ShipLayout.CoffeeTableSize.y/2, .6f),
+                ShipLayout.CoffeeTableSize, ShipLayout.CoffeeTableTop-ShipLayout.CoffeeTableSize.y),
+            Block("Galley counter", new Vector3(-3, ShipLayout.GalleySize.y/2, -4.1f), ShipLayout.GalleySize, "526467",
+                ("Galley worktop", new Vector3(-3, ShipLayout.GalleyWorktopHeight-.03f, -4.1f),
+                    new Vector3(ShipLayout.GalleySize.x+.08f, .06f, ShipLayout.GalleySize.z+.06f), "C6AA90")),
             BuildTerminal(),
-            BuildNavigation(),
-            Block("Reading armchair", new Vector3(-4.6f, 4.6f, -2), new Vector3(1.5f, .9f, 1.5f), "B37A88",
-                ("Reading armchair back", new Vector3(-4.6f, 5.2f, -2.6f), new Vector3(1.5f, 1.2f, .25f), "B37A88")),
+            Block("Reading armchair", new Vector3(-4.6f, ShipLayout.DeckHeight+.28f, -2), new Vector3(.85f, .5f, .80f), "B37A88",
+                ("Reading armchair back", new Vector3(-4.6f, ShipLayout.DeckHeight+.62f, -2.32f), new Vector3(.85f, .56f, .16f), "B37A88")),
         };
-        Box("Lounge rug", new Vector3(-9, .06f, 1), new Vector3(6, .05f, 4), "775B78");
+        Box("Lounge rug", new Vector3(-9, .06f, 1), new Vector3(3.2f, .025f, 2.4f), "775B78");
     }
 
     void BuildLight()
@@ -81,20 +82,12 @@ public sealed class ShipInterior : MonoBehaviour
 
     Transform BuildTerminal()
     {
-        var terminal = Block("Order terminal", new Vector3(.4f, .7f, -1.9f), new Vector3(1.5f, 1.4f, .9f), "283E42",
-            ("Order terminal housing", new Vector3(.4f, 1.85f, -2), new Vector3(1.6f, 1.1f, .3f), "526467"));
+        var terminal = Block("Order terminal", new Vector3(.4f, ShipLayout.TerminalBodySize.y/2, -1.9f), ShipLayout.TerminalBodySize, "283E42",
+            ("Order terminal housing", new Vector3(.4f, ShipLayout.TerminalScreenHeight, -1.9f), new Vector3(.65f, .50f, .14f), "526467"));
         ColorUtility.TryParseHtmlString("#8CD5A9", out terminalGlow);
         terminalScreen = kit.Emissive("Order terminal screen", terminalGlow, 1.5f);
-        kit.Box("Order terminal screen", new Vector3(.4f, 1.85f, -1.83f), new Vector3(1.3f, .8f, .04f), terminalScreen, shell);
+        kit.Box("Order terminal screen", new Vector3(.4f, ShipLayout.TerminalScreenHeight, -1.815f), new Vector3(.55f, .39f, .026f), terminalScreen, shell);
         return terminal;
-    }
-
-    Transform BuildNavigation()
-    {
-        var console = Block("Navigation console", new Vector3(8, .9f, -3), new Vector3(6, 1.8f, 1.6f), "283949");
-        for (int x = 6; x <= 10; x += 2)
-            kit.Box("Navigation display", new Vector3(x, 1.85f, -3), new Vector3(1.2f, .08f, .8f), kit.Flat("87C5C8", 1.5f), console);
-        return console;
     }
 
     // A table top on four slim legs instead of a slab floating above the rug.

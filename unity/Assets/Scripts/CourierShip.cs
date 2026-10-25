@@ -51,6 +51,7 @@ public sealed class CourierShip : MonoBehaviour
 
         var characters = GetComponent<CourierCharacters>();
         var courier = characters.CreateCourier(ShipLayout.CourierStart);
+        courier.rotation = Quaternion.Euler(0,180,0);
         Lift = gameObject.AddComponent<ShipLift>();
         Lift.Build(transform, courier, characters);
         Motor = new CourierMotor(courier, Lift);
@@ -100,6 +101,7 @@ public sealed class CourierShip : MonoBehaviour
         interior.SetTerminalHighlight(AtTerminal && !Terminal.IsOpen);
         Motor.Turn(Time.deltaTime);
         if (input.Pressed(CourierAction.Camera)) framing.Follow = !framing.Follow;
+        framing.ApplyLook(input.LookDelta(Time.deltaTime),input.ZoomDelta);
         if (Terminal.IsOpen)
         {
             if (input.Pressed(CourierAction.Cancel)) Terminal.Close();
@@ -108,16 +110,18 @@ public sealed class CourierShip : MonoBehaviour
         }
         if (Lift.IsRiding) return;
         float speed = input.Held(CourierAction.Sprint) ? CourierMotor.SprintSpeed : CourierMotor.WalkSpeed;
-        Motor.Move(ScreenToDeck(input.Move), speed * Time.deltaTime);
+        Motor.Move(MovementDirection(input.Move), speed * Time.deltaTime);
         if (input.Pressed(CourierAction.Interact)) Interact();
         else if (input.Pressed(CourierAction.Descend)) Descend();
     }
 
-    // Input is screen-relative; the cutaway is viewed from +Z, so world +X is screen-left.
-    Vector3 ScreenToDeck(Vector2 stick)
+    // Project the camera basis onto the deck so orbiting does not mirror or skew WASD.
+    public Vector3 MovementDirection(Vector2 stick)
     {
         var camera = view.transform;
-        return new Vector3(stick.x * Mathf.Sign(camera.right.x), 0, stick.y * Mathf.Sign(camera.forward.z));
+        var right = Vector3.ProjectOnPlane(camera.right,Vector3.up).normalized;
+        var forward = Vector3.ProjectOnPlane(camera.forward,Vector3.up).normalized;
+        return Vector3.ClampMagnitude(right*stick.x+forward*stick.y,1);
     }
 
     public void Interact()

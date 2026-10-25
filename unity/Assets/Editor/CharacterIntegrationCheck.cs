@@ -108,7 +108,8 @@ public static class CharacterIntegrationCheck
             "Duplicate furnishing builders.");
         string[] names = { "Cabin bed", "Wood bookshelf", "Terracotta sofa", "Monstera downstairs",
             "Snake plant bridge", "Monstera upstairs", "Pothos reading nook" };
-        float[] heights = { 1.55f, 2.35f, 1.10f, 1.55f, 1.20f, 1.55f, .72f };
+        float[] heights = { ShipLayout.BedSize.y, ShipLayout.BookshelfSize.y, ShipLayout.SofaSize.y,
+            ShipLayout.MonsteraHeight, ShipLayout.SnakePlantHeight, ShipLayout.MonsteraHeight, ShipLayout.PothosHeight };
         for (int i = 0; i < names.Length; i++)
         {
             var prop = Find(names[i]);
@@ -129,7 +130,7 @@ public static class CharacterIntegrationCheck
         Require(renderers.Length > 0, "Window dressing has no visible geometry.");
         var bounds = renderers[0].bounds;
         foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        Require(bounds.min.x >= 2.0f && bounds.max.x <= 14f && bounds.min.y >= .6f && bounds.max.y <= 8.3f,
+        Require(bounds.min.x >= 2.0f && bounds.max.x <= 14f && bounds.min.y >= -.9f && bounds.max.y <= 5.6f,
             "City geometry escapes the panoramic window.");
         foreach (var name in new[] { "Ship name lettering", "Cabin deck sign", "Bridge sign" })
         {
@@ -247,8 +248,8 @@ public static class CharacterIntegrationCheck
             }
             else if (name == "details-window")
             {
-                camera.transform.position = new Vector3(10.0f, 5.2f, 5.5f);
-                camera.transform.LookAt(new Vector3(8, 4.45f, -4.45f));
+                camera.transform.position = new Vector3(10.0f, 3.2f, 5.5f);
+                camera.transform.LookAt(new Vector3(8, 2.5f, -4.45f));
                 camera.fieldOfView = 44;
             }
             else if (name == "details-hologram")

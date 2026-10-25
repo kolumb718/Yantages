@@ -66,6 +66,7 @@ public sealed class ShipHud : MonoBehaviour
         x = Hint(x, y, Key(CourierAction.Sprint), "быстрее");
         x = Hint(x, y, Key(CourierAction.Interact), "действие");
         x = Hint(x, y, Key(CourierAction.Camera), "камера");
+        if (!input.UsingGamepad) x = Hint(x,y,"ПКМ / колесо","обзор / зум");
         Hint(x, y, Key(CourierAction.Cancel), "закрыть");
     }
 
@@ -96,6 +97,7 @@ public sealed class ShipHud : MonoBehaviour
             LiftPrompt.Call => new[] { (interact, "Вызвать лифт") },
             LiftPrompt.EnterFromLeft => new[] { ("", "Вход в лифт — через левую дверь") },
             LiftPrompt.LoungeChoices => new[] { (interact, "В каюту"), (descend, "В ангар") },
+            LiftPrompt.CabinChoices => new[] { (interact, "В гостиную"), (descend, "В ангар") },
             LiftPrompt.ToLounge => new[] { (interact, "В гостиную") },
             _ => ship.AtTerminal ? new[] { (interact, "Открыть заказ") } : null,
         };

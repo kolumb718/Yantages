@@ -86,7 +86,11 @@ public static class GaitClips
             for (int i = 0; i <= Samples; i++)
             {
                 float time = gait.Length * i / Samples;
-                keys[i] = new Keyframe(time, pair.Value(time));
+                // The humanoid muscle signs on this avatar put the original low, loaded
+                // foot on a +Z sweep (a backwards stride). Reverse the complete cycle,
+                // including the knee/ankle and opposing arm phases, so stance moves -Z
+                // while the courier walks along her unchanged +Z facing direction.
+                keys[i] = new Keyframe(time, pair.Value(gait.Length - time));
             }
             var curve = new AnimationCurve(keys);
             for (int i = 0; i < keys.Length; i++) curve.SmoothTangents(i, 0);
@@ -97,8 +101,16 @@ public static class GaitClips
         settings.loopBlend = true;
         AnimationUtility.SetAnimationClipSettings(clip, settings);
 
-        AssetDatabase.DeleteAsset(path);
-        AssetDatabase.CreateAsset(clip, path);
-        return clip;
+        var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        if (existing == null)
+        {
+            AssetDatabase.CreateAsset(clip, path);
+            return clip;
+        }
+        // Rebuild repeatably without changing the GUID referenced by the controller/prefab.
+        EditorUtility.CopySerialized(clip, existing);
+        UnityEngine.Object.DestroyImmediate(clip);
+        EditorUtility.SetDirty(existing);
+        return existing;
     }
 }

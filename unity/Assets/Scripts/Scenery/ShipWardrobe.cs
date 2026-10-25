@@ -28,6 +28,13 @@ public sealed class ShipWardrobe : MonoBehaviour
         BuildCabinet();
         BuildSuit();
         BuildLoot();
+        // The locker remains large enough for a 1.8 m wearer plus helmet and boots.
+        root.localScale = Vector3.one * (ShipLayout.WardrobeHeight / 2.65f);
+        var suit = root.Find("Stored EVA suit");
+        var renderers = suit.GetComponentsInChildren<Renderer>();
+        var bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        suit.localScale *= ShipLayout.EvaSuitHeight / bounds.size.y;
     }
 
     Material Material(string name, Color color, float gloss=.22f, float metallic=0, bool glow=false)
