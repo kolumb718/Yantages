@@ -8,23 +8,22 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | Путь | Назначение |
 | --- | --- |
 | unity/ | Новая основная версия |
-| unity/Assets/Scripts/CourierShip.cs | Генерация интерьера, движение, лифт, заказ и IMGUI |
-| unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
-| unity/Assets/Scripts/ShipCameraFraming.cs | Кадрирование дома/ангара, camera-window слежение (C — обзор), переход по высоте пассажира и видимость этажей |
-| unity/Assets/Scripts/ShipFurnishings.cs | Размещение мебели и растений из prefab |
-| unity/Assets/Scripts/ShipWindowView.cs | Городская сценография и параллакс по положению камеры |
-| unity/Assets/Shaders/WindowCity.shader | Обрезка движущихся слоёв города по оконному проёму |
-| unity/Assets/Scripts/ShipInteriorDetails.cs | Надписи, кабели и вращающаяся голограмма |
-| unity/Assets/Scripts/ShipWardrobe.cs | Открытый гардероб со скафандром и снаряжением |
-| unity/Assets/Scripts/ShipLift.cs | Движение платформы, пассажир, вызов и ограничения шахты |
-| unity/Assets/Scripts/GlassLiftVisuals.cs | Стеклянная шахта, настил, направляющие, двери и индикаторы |
-| unity/Assets/Scripts/ShipHangar.cs | Подземный ангар и процедурный зелёный корабль |
-| unity/Assets/Shaders/Hologram.shader | Прозрачная сканирующая оболочка планеты |
+| unity/Assets/Scripts/CourierShip.cs | Точка сборки сцены: создаёт модули и направляет ввод к героине, лифту, терминалу и камере |
+| unity/Assets/Scripts/Core/ | SceneKit — материалы, примитивы, надписи и свет с владением ресурсами; ShipShaders — шейдеры, гарантированно попадающие в сборку |
+| unity/Assets/Scripts/Input/CourierInput.cs | Input System: действия клавиатуры и геймпада, подписи клавиш активного устройства |
+| unity/Assets/Scripts/Ship/ | ShipLayout — все размеры корабля; CourierMotor и FloorSweep — ходьба, границы и мебель-препятствия; OrderTerminal — заказ; ShipInterior — корпус, встроенная мебель и свет |
+| unity/Assets/Scripts/Ship/Lift/ | ShipLift — поездка, пассажир, плавные двери, стены шахты; GlassLiftVisuals — стеклянная шахта и индикаторы |
+| unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Кадрирование дома/ангара, camera-window слежение (C — обзор), видимость этажей, вызов параллакса окна |
+| unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, размещение мебели из prefab |
+| unity/Assets/Scripts/Characters/CourierCharacters.cs | Модели персонажей и следование совы |
+| unity/Assets/Scripts/UI/ShipHud.cs | IMGUI-интерфейс с масштабированием под экран и подписями клавиш устройства |
+| unity/Assets/Resources/Shaders/ | WindowCity, Hologram, OrbitaUnlit и StandardReference.mat — включаются в сборку через Resources |
 | unity/Assets/Art/Furniture/ | FBX, палитры, материалы и prefab мебели/растений |
 | unity/Assets/Editor/FurnitureSetup.cs | Подготовка мебели и привязка в Ship |
 | unity/Assets/Art/Characters/ | FBX, палитры, материалы и prefab героини/совы |
 | unity/Assets/Editor/CharacterSetup.cs | Подготовка персонажей и привязка в Ship |
-| unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode и рендеров |
+| unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode, лифта, ангара и рендеров |
+| unity/Assets/Editor/ShipSystemsCheck.cs | Batch-проверка камеры, ввода (клавиатура и виртуальный геймпад), препятствий, дверей лифта и шейдеров сборки |
 | unity/Assets/Editor/ProjectSetup.cs | Создание сцены при первом импорте |
 | unity/Packages/manifest.json | Минимальные зависимости модулей |
 | godot/ | Предыдущий Godot-прототип |
@@ -36,18 +35,17 @@ Origin: git@github.com:kolumb718/Yantages.git.
 Редактор проекта — Unity 6000.6.7f1 (b22767f04f04); версия получена из настоящего редактора и закреплена в ProjectVersion.txt.
 Редактор установлен в C:\Program Files\Unity\Hub\Editor\6000.6.7f1\Editor\Unity.exe.
 Импорт и Play Mode подтверждены через MCP; конфигурация player-сборки ещё не проверена.
-Используются Built-in renderer, Standard shader, IMGUI и старый Input API.
+Используются Built-in renderer, Standard shader, IMGUI и Input System 1.20.1 (Active Input Handling — только новый ввод).
 Сцена Assets/Scenes/Ship.unity создана редактором и добавляется вместе с .meta; геометрия появляется в Play Mode.
 Геометрия появляется в Play Mode. Для полноценного редактирования сцены это впоследствии стоит заменить сохранёнными объектами и prefab.
 
 ## Известный технический долг
-CourierShip.cs совмещает несколько обязанностей; материалы создаются многократно.
-Нет физического контроллера, постоянного состояния и адаптивного UI. Для импорта персонажей добавлена batch-проверка реального Play Mode; полного набора регрессионных тестов пока нет.
+Нет физического контроллера: ходьба ограничена прямоугольниками палуб, стенами шахты и следами мебели. Нет постоянного состояния (сохранений). UI на IMGUI масштабируется, но навигация по кнопкам геймпадом в карточке заказа идёт через действия, а не фокус. Есть две batch-проверки; модульных тестов пока нет.
 Editor-инициализация теперь пропускает создание при dirty active scene; восстановление/импорт чистого checkout ещё проверить.
-Runtime-поиск Standard shader может потребовать явного включения шейдера в сборку; проверить в настоящем player/WebGL.
+Шейдеры закреплены в Resources (проверено ShipSystemsCheck в редакторе); настоящая player/WebGL-сборка ещё не собиралась.
 
 ## Направление архитектуры — предложение
-Выделять по мере развития: ShipBuilder, PlayerController, InteractionController, Lift, OrderState, OrderView.
+Выполнено 25 октября 2026: CourierShip разделён на ShipInterior, CourierMotor, OrderTerminal, CourierInput и ShipHud. Дальше по мере роста: InteractionController при появлении третьего интерактивного объекта, данные заказов в ScriptableObject после второго заказа.
 Состояние заказа отделить от отображения; данные заказов можно вынести в ScriptableObject после появления второго заказа.
 Не добавлять DI-фреймворк, сетевой стек и сложную систему событий ради одного прототипа.
 

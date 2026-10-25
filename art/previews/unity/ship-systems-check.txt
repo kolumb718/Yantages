@@ -1,0 +1,11 @@
+build safety: custom shaders in Resources, Standard pinned, no built-in unlit materials
+input: keyboard E, gamepad stick (1.00, 0.00), gamepad interact label A
+follow start: camera (7.22, 6.30, 14.25) courier screen (0.30, 0.04)
+dead zone drift 0,0005
+walk to bridge: courier x 8,30 pan -5,72 screen (-0.30, -0.19)
+walk into coffee table stops at x -7,55
+walk into wardrobe stops at z 2,64
+overview error 0,0016
+door leaf while departing 0,420
+cabin arrival screen (0.24, 0.24)
+ORBITA_SHIP_SYSTEMS_PASS

@@ -4,12 +4,11 @@ using UnityEngine;
 // Original cutaway hangar and a warm low-poly courier craft. Presentation only.
 public sealed class ShipHangar : MonoBehaviour
 {
-    public const float FloorHeight = -8.2f;
+    const float FloorHeight = ShipLayout.HangarHeight;
     public Transform Interior { get; private set; }
     public Transform Craft { get; private set; }
 
-    readonly List<Material> materials = new List<Material>();
-    readonly List<Mesh> meshes = new List<Mesh>();
+    readonly SceneKit kit = new SceneKit();
     Material concrete, wall, steel, dark, cream, amber, mint, green, belly, red, glass, brass;
 
     public void Build(Transform ship)
@@ -17,76 +16,33 @@ public sealed class ShipHangar : MonoBehaviour
         if (Interior != null) return;
         Interior = new GameObject("Underground hangar").transform;
         Interior.SetParent(ship, false);
-        concrete = Surface("Hangar warm concrete", new Color(.29f, .27f, .25f));
-        wall = Surface("Hangar plum walls", new Color(.22f, .245f, .28f));
-        steel = Surface("Hangar brushed steel", new Color(.34f, .39f, .41f), .3f, .4f);
-        dark = Surface("Hangar dark recess", new Color(.075f, .10f, .12f));
-        cream = Surface("Hangar ivory markings", new Color(.85f, .78f, .61f));
-        amber = Surface("Hangar amber guidance", new Color(1f, .62f, .25f), .25f, 0, true);
-        mint = Surface("Hangar mint guidance", new Color(.25f, .79f, .71f), .3f, 0, true);
-        green = Surface("Courier craft jade enamel", new Color(.19f, .64f, .40f), .42f, .15f);
-        belly = Surface("Courier craft deep jade", new Color(.075f, .34f, .25f), .35f, .15f);
-        red = Surface("Courier craft vermilion belt", new Color(.69f, .16f, .105f), .4f, .1f);
-        glass = Surface("Courier craft petrol glazing", new Color(.045f, .15f, .19f), .85f, .4f);
-        brass = Surface("Courier craft aged brass", new Color(.63f, .53f, .33f), .4f, .5f);
+        concrete = kit.Surface("Hangar warm concrete", new Color(.29f, .27f, .25f), .18f);
+        wall = kit.Surface("Hangar plum walls", new Color(.22f, .245f, .28f), .18f);
+        steel = kit.Surface("Hangar brushed steel", new Color(.34f, .39f, .41f), .3f, .4f);
+        dark = kit.Surface("Hangar dark recess", new Color(.075f, .10f, .12f), .18f);
+        cream = kit.Surface("Hangar ivory markings", new Color(.85f, .78f, .61f), .18f);
+        amber = kit.Emissive("Hangar amber guidance", new Color(1f, .62f, .25f), .65f, .25f);
+        mint = kit.Emissive("Hangar mint guidance", new Color(.25f, .79f, .71f), .65f, .3f);
+        green = kit.Surface("Courier craft jade enamel", new Color(.19f, .64f, .40f), .42f, .15f);
+        belly = kit.Surface("Courier craft deep jade", new Color(.075f, .34f, .25f), .35f, .15f);
+        red = kit.Surface("Courier craft vermilion belt", new Color(.69f, .16f, .105f), .4f, .1f);
+        glass = kit.Surface("Courier craft petrol glazing", new Color(.045f, .15f, .19f), .85f, .4f);
+        brass = kit.Surface("Courier craft aged brass", new Color(.63f, .53f, .33f), .4f, .5f);
         BuildRoom();
         BuildCraft();
     }
 
-    Material Surface(string name, Color color, float gloss = .18f, float metal = 0, bool glow = false)
-    {
-        var material = new Material(Shader.Find("Standard")) { name = name, color = color };
-        material.SetFloat("_Glossiness", gloss);
-        material.SetFloat("_Metallic", metal);
-        if (glow)
-        {
-            material.EnableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", color * .65f);
-        }
-        materials.Add(material);
-        return material;
-    }
-
     GameObject Shape(string name, PrimitiveType type, Vector3 position, Vector3 size, Material material,
-        Transform parent = null)
-    {
-        var item = GameObject.CreatePrimitive(type);
-        item.name = name;
-        item.transform.SetParent(parent != null ? parent : Interior, false);
-        item.transform.localPosition = position;
-        item.transform.localScale = size;
-        item.GetComponent<Renderer>().sharedMaterial = material;
-        Destroy(item.GetComponent<Collider>());
-        return item;
-    }
+        Transform parent = null) => kit.Shape(name, type, position, size, material, parent != null ? parent : Interior);
 
     GameObject Box(string name, Vector3 position, Vector3 size, Material material, Transform parent = null)
         => Shape(name, PrimitiveType.Cube, position, size, material, parent);
 
     void Tube(string name, Vector3 a, Vector3 b, float radius, Material material, Transform parent = null)
-    {
-        var delta = b - a;
-        var tube = Shape(name, PrimitiveType.Cylinder, (a + b) * .5f,
-            new Vector3(radius * 2, delta.magnitude * .5f, radius * 2), material, parent);
-        tube.transform.localRotation = Quaternion.FromToRotation(Vector3.up, delta.normalized);
-    }
+        => kit.Tube(name, a, b, radius, material, parent != null ? parent : Interior);
 
     void Caption(string name, string text, Vector3 position, float size)
-    {
-        var item = new GameObject(name);
-        item.transform.SetParent(Interior, false);
-        item.transform.localPosition = position;
-        item.transform.localRotation = Quaternion.Euler(0, 180, 0);
-        var label = item.AddComponent<TextMesh>();
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        label.fontSize = 64;
-        label.characterSize = size * 10 / label.fontSize;
-        label.anchor = TextAnchor.MiddleCenter;
-        label.alignment = TextAlignment.Center;
-        label.color = new Color(.95f, .82f, .61f);
-        label.text = text;
-        item.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-    }
+        => kit.Caption(name, text, position, size, new Color(.95f, .82f, .61f), Interior);
 
     void BuildRoom()
     {
@@ -124,15 +80,7 @@ public sealed class ShipHangar : MonoBehaviour
         {
             float x = -15 + i * 5;
             Box("Hangar amber wall luminaire", new Vector3(x, -1.65f, -7.1f), new Vector3(1.2f, .16f, .16f), amber);
-            var light = new GameObject("Hangar warm pool light", typeof(Light));
-            light.transform.SetParent(Interior, false);
-            light.transform.localPosition = new Vector3(x, -2.5f, -3.5f);
-            var lamp = light.GetComponent<Light>();
-            lamp.type = LightType.Point;
-            lamp.color = new Color(1, .76f, .52f);
-            lamp.intensity = 1.4f;
-            lamp.range = 11;
-            lamp.shadows = LightShadows.None;
+            kit.PointLight("Hangar warm pool light", new Vector3(x, -2.5f, -3.5f), new Color(1, .76f, .52f), 1.4f, 11, Interior);
         }
         // The entire foreground is a walkable apron. The lift landing remains clear.
         for (int i = 0; i < 12; i++)
@@ -317,12 +265,8 @@ public sealed class ShipHangar : MonoBehaviour
         item.transform.SetParent(Craft, false);
         item.GetComponent<MeshFilter>().sharedMesh = mesh;
         item.GetComponent<MeshRenderer>().sharedMaterials = palette;
-        meshes.Add(mesh);
+        kit.Own(mesh);
     }
 
-    void OnDestroy()
-    {
-        foreach (var mesh in meshes) if (mesh != null) Destroy(mesh);
-        foreach (var material in materials) if (material != null) Destroy(material);
-    }
+    void OnDestroy() => kit.Release();
 }

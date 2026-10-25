@@ -1,10 +1,9 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 // An open equipment locker: static, original low-poly dressing with reusable materials.
 public sealed class ShipWardrobe : MonoBehaviour
 {
-    readonly List<Material> ownedMaterials = new List<Material>();
+    readonly SceneKit kit = new SceneKit();
     Transform root;
     Material frame, timber, recess, cream, rust, rubber, brass, visor, cyan, red;
     bool built;
@@ -32,31 +31,10 @@ public sealed class ShipWardrobe : MonoBehaviour
     }
 
     Material Material(string name, Color color, float gloss=.22f, float metallic=0, bool glow=false)
-    {
-        var material = new Material(Shader.Find("Standard")) { name = name, color = color };
-        material.SetFloat("_Glossiness", gloss);
-        material.SetFloat("_Metallic", metallic);
-        if (glow)
-        {
-            material.EnableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", color*.35f);
-        }
-        ownedMaterials.Add(material);
-        return material;
-    }
+        => glow ? kit.Emissive(name, color, .35f, gloss, metallic) : kit.Surface(name, color, gloss, metallic);
 
     GameObject Shape(string name, PrimitiveType type, Vector3 position, Vector3 scale,
-        Material material, Transform parent=null)
-    {
-        var obj = GameObject.CreatePrimitive(type);
-        obj.name = name;
-        obj.transform.SetParent(parent != null ? parent : root, false);
-        obj.transform.localPosition = position;
-        obj.transform.localScale = scale;
-        obj.GetComponent<Renderer>().sharedMaterial = material;
-        Destroy(obj.GetComponent<Collider>());
-        return obj;
-    }
+        Material material, Transform parent=null) => kit.Shape(name, type, position, scale, material, parent != null ? parent : root);
 
     void Box(string name, Vector3 position, Vector3 scale, Material material, Transform parent=null)
     {
@@ -69,29 +47,10 @@ public sealed class ShipWardrobe : MonoBehaviour
     }
 
     void Tube(string name, Vector3 a, Vector3 b, float radius, Material material, Transform parent=null)
-    {
-        var delta = b-a;
-        var obj = Shape(name, PrimitiveType.Cylinder, (a+b)*.5f,
-            new Vector3(radius*2, delta.magnitude*.5f, radius*2), material, parent);
-        obj.transform.localRotation = Quaternion.FromToRotation(Vector3.up, delta.normalized);
-    }
+        => kit.Tube(name, a, b, radius, material, parent != null ? parent : root);
 
     void Caption(string name, string text, Vector3 position, float size)
-    {
-        var obj = new GameObject(name);
-        obj.transform.SetParent(root, false);
-        obj.transform.localPosition = position;
-        obj.transform.localRotation = Quaternion.Euler(0, 180, 0);
-        var label = obj.AddComponent<TextMesh>();
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        label.fontSize = 64;
-        label.characterSize = size*10/label.fontSize;
-        label.anchor = TextAnchor.MiddleCenter;
-        label.alignment = TextAlignment.Center;
-        label.color = new Color(.92f, .81f, .61f);
-        label.text = text;
-        obj.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-    }
+        => kit.Caption(name, text, position, size, new Color(.92f, .81f, .61f), root);
 
     void BuildCabinet()
     {
@@ -199,9 +158,5 @@ public sealed class ShipWardrobe : MonoBehaviour
         Box("Parcel tie", new Vector3(-1.49f, .31f, .20f), new Vector3(.06f, .018f, .41f), cream);
     }
 
-    void OnDestroy()
-    {
-        foreach (var material in ownedMaterials)
-            if (material != null) Destroy(material);
-    }
+    void OnDestroy() => kit.Release();
 }

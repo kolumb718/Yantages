@@ -7,6 +7,7 @@ public sealed class ShipWindowView : MonoBehaviour
     bool built;
     readonly List<Transform> layers = new List<Transform>();
     readonly float[] depthWeights = { .16f, .075f, .025f, .075f, .04f };
+    static readonly int WorldToWindow = Shader.PropertyToID("_WorldToWindow");
     Vector3 referenceCamera;
     bool hasReference;
 
@@ -31,9 +32,7 @@ public sealed class ShipWindowView : MonoBehaviour
             delta.y / Mathf.Sqrt(1 + delta.y * delta.y / 6.25f), 0);
         // Far scenery follows the eye more, so it travels less on screen than nearby docks.
         for (int i = 0; i < layers.Count; i++) layers[i].localPosition = delta * depthWeights[i];
-        foreach (var material in materials)
-            if (material.shader.name == "Orbita/WindowCity")
-                material.SetMatrix("_WorldToWindow", windowRoot.worldToLocalMatrix);
+        Shader.SetGlobalMatrix(WorldToWindow, windowRoot.worldToLocalMatrix);
     }
 
     readonly List<Material> materials = new List<Material>();
@@ -48,6 +47,7 @@ public sealed class ShipWindowView : MonoBehaviour
         var root = new GameObject("Panoramic city window").transform;
         windowRoot = root;
         root.SetParent(ship, false);
+        Shader.SetGlobalMatrix(WorldToWindow, root.worldToLocalMatrix);
 
         var far = Flat("Distant plum skyline", "675372");
         var middle = Flat("Midcity blue plum", "393B56");
@@ -137,9 +137,7 @@ public sealed class ShipWindowView : MonoBehaviour
     {
         Color color;
         ColorUtility.TryParseHtmlString("#" + hex, out color);
-        var shader = Shader.Find(name == "Window frame" ? "Unlit/Color" : "Orbita/WindowCity");
-        if (shader == null) throw new MissingReferenceException("Window material shader is unavailable: " + name);
-        var material = new Material(shader) { name = name, color = color };
+        var material = new Material(name == "Window frame" ? ShipShaders.Unlit : ShipShaders.WindowCity) { name = name, color = color };
         materials.Add(material);
         return materials.Count - 1;
     }
@@ -168,9 +166,7 @@ public sealed class ShipWindowView : MonoBehaviour
             }
         texture.SetPixels(pixels);
         texture.Apply(false, true);
-        var shader = Shader.Find("Unlit/Texture");
-        if (shader == null) throw new MissingReferenceException("Built-in Unlit/Texture shader is unavailable.");
-        var material = new Material(shader) { name = "Muted dusk sky", mainTexture = texture };
+        var material = new Material(ShipShaders.Unlit) { name = "Muted dusk sky", mainTexture = texture };
         skyMaterial = material;
         var mesh = new Mesh { name = "Window sky quad" };
         mesh.vertices = new[] { new Vector3(3.08f, 1.58f, -4.775f), new Vector3(3.08f, 7.42f, -4.775f),

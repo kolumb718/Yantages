@@ -31,6 +31,9 @@ public sealed class ShipCameraFraming : MonoBehaviour
     // C toggles between the camera window and the whole-ship overview.
     public bool Follow { get; set; } = true;
 
+    // Whole-ship frame for the passenger's current height, with no follow zoom or pan.
+    public Vector3 OverviewPosition => Vector3.Lerp(homeView, hangarView, HangarBlend());
+
     public void ConfigureHangar(Transform interior, Transform courier, GameObject[] home, GlassLiftVisuals visuals)
     {
         hangar = interior;
@@ -122,7 +125,7 @@ public sealed class ShipCameraFraming : MonoBehaviour
     }
 
     float HangarBlend() => passenger == null ? 0 : Mathf.SmoothStep(0, 1,
-        Mathf.Clamp01(-passenger.position.y / -ShipLift.HangarHeight));
+        Mathf.Clamp01(-passenger.position.y / -ShipLayout.HangarHeight));
 
     // Overview camera for the current floor plus how far the follow zoom may travel inwards.
     Vector3 BaseView(out float approach, out Vector2 limit)

@@ -5,8 +5,8 @@ public sealed class ShipInteriorDetails : MonoBehaviour
 {
     Transform globe;
     Transform dressing;
+    readonly SceneKit kit = new SceneKit();
     Material metal, warmMetal, cable, amber, cyan, mint;
-    Font font;
 
     public void Build(Transform ship)
     {
@@ -22,30 +22,12 @@ public sealed class ShipInteriorDetails : MonoBehaviour
         BuildHologram();
     }
 
-    static Material Surface(string name, Color color)
-    {
-        var material = new Material(Shader.Find("Standard")) { name = name, color = color };
-        material.SetFloat("_Glossiness", .22f);
-        return material;
-    }
+    Material Surface(string name, Color color) => kit.Surface(name, color);
 
-    static Material Glow(string name, Color color)
-    {
-        return new Material(Shader.Find("Unlit/Color")) { name = name, color = color };
-    }
+    Material Glow(string name, Color color) => kit.Unlit(name, color);
 
-    static GameObject Primitive(string name, PrimitiveType type, Vector3 position,
-        Vector3 scale, Material material, Transform parent)
-    {
-        var item = GameObject.CreatePrimitive(type);
-        item.name = name;
-        item.transform.SetParent(parent, false);
-        item.transform.localPosition = position;
-        item.transform.localScale = scale;
-        item.GetComponent<Renderer>().sharedMaterial = material;
-        Destroy(item.GetComponent<Collider>());
-        return item;
-    }
+    GameObject Primitive(string name, PrimitiveType type, Vector3 position,
+        Vector3 scale, Material material, Transform parent) => kit.Shape(name, type, position, scale, material, parent);
 
     void Box(string name, Vector3 position, Vector3 scale, Material material)
     {
@@ -55,20 +37,7 @@ public sealed class ShipInteriorDetails : MonoBehaviour
     void Label(string name, string text, Vector3 position, float size, Color color,
         Transform parent = null, bool plaque = true)
     {
-        var item = new GameObject(name);
-        item.transform.SetParent(parent != null ? parent : dressing, false);
-        item.transform.localPosition = position;
-        item.transform.localRotation = Quaternion.Euler(0, 180, 0);
-        var lettering = item.AddComponent<TextMesh>();
-        lettering.font = font;
-        lettering.fontSize = 64;
-        // Font size controls atlas detail; compensate so the requested size stays in metres.
-        lettering.characterSize = size * 10f / lettering.fontSize;
-        lettering.anchor = TextAnchor.MiddleCenter;
-        lettering.alignment = TextAlignment.Center;
-        lettering.color = color;
-        lettering.text = text;
-        item.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+        kit.Caption(name, text, position, size, color, parent != null ? parent : dressing);
         if (plaque)
         {
             float width = text.Split('\n')[0].Length * size * .48f + .25f;
@@ -107,7 +76,6 @@ public sealed class ShipInteriorDetails : MonoBehaviour
 
     void BuildWallDetails()
     {
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         Label("Ship name lettering", "КРОШКА  /  ORBITA 07", new Vector3(-8.5f, 7.65f, -4.82f), .40f, new Color(.91f, .76f, .53f), plaque:false);
         Label("Cabin deck sign", "02  /  КАЮТА", new Vector3(-10.4f, 6.45f, -4.82f), .27f, new Color(.92f, .82f, .65f));
         Label("Lounge deck sign", "01  /  ЖИЛОЙ ОТСЕК", new Vector3(-9.0f, 2.8f, -4.82f), .25f, new Color(.89f, .74f, .56f));
@@ -173,7 +141,7 @@ public sealed class ShipInteriorDetails : MonoBehaviour
         globe = new GameObject("Holographic planet").transform;
         globe.SetParent(platform, false);
         globe.localPosition = new Vector3(0, 1.25f, 0);
-        var skin = new Material(Shader.Find("Orbita/Hologram")) { name = "Holographic atmosphere" };
+        var skin = kit.Custom("Holographic atmosphere", ShipShaders.Hologram);
         skin.SetColor("_Tint", new Color(.18f, .73f, 1, .25f));
         Primitive("Hologram atmosphere", PrimitiveType.Sphere, Vector3.zero, Vector3.one*1.2f, skin, globe);
         for (int latitude = -60; latitude <= 60; latitude += 20)
@@ -208,17 +176,13 @@ public sealed class ShipInteriorDetails : MonoBehaviour
                 new Vector3(Mathf.Cos(a)*.25f, .77f, Mathf.Sin(a)*.25f) }, cyan, .008f, platform);
         }
         Label("Projector planet label", "ЗЕМЛЯ / EARTH", new Vector3(0, .47f, 1.02f), .12f, new Color(.53f, .91f, 1), platform, false);
-        var light = new GameObject("Hologram projector light").AddComponent<Light>();
-        light.transform.SetParent(platform, false);
-        light.transform.localPosition = new Vector3(0, .6f, 0);
-        light.type = LightType.Point;
-        light.color = new Color(.22f, .73f, 1);
-        light.range = 3;
-        light.intensity = .45f;
+        kit.PointLight("Hologram projector light", new Vector3(0, .6f, 0), new Color(.22f, .73f, 1), .45f, 3, platform);
     }
 
     void Update()
     {
         if (globe != null) globe.Rotate(Vector3.up, Time.deltaTime*9, Space.Self);
     }
+
+    void OnDestroy() => kit.Release();
 }

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,7 +10,6 @@ public static class CharacterIntegrationCheck
     const string StageKey = "Orbita.CharacterCheck.Stage";
     const string ErrorKey = "Orbita.CharacterCheck.Error";
     static int ticks;
-    static readonly BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
     static CharacterIntegrationCheck()
     {
@@ -93,10 +91,7 @@ public static class CharacterIntegrationCheck
         }
     }
 
-    static void Invoke(CourierShip ship, string method, params object[] args)
-    {
-        typeof(CourierShip).GetMethod(method, Private).Invoke(ship, args);
-    }
+    static void Move(CourierShip ship, Vector3 direction, float distance) => ship.Motor.Move(direction, distance);
 
     static void ValidateFurnishings()
     {
@@ -331,25 +326,25 @@ public static class CharacterIntegrationCheck
                 Capture("details-wardrobe", false);
                 SessionState.SetFloat("Orbita.CharacterCheck.PlanetYaw", Find("Holographic planet").localEulerAngles.y);
                 var start = courier.position;
-                Invoke(ship, "MoveCourier", Vector3.right, 1f);
+                Move(ship, Vector3.right, 1f);
                 Require(Mathf.Abs(courier.position.x - start.x - 1) < .001f, "Courier movement failed.");
                 courier.position = start;
-                Invoke(ship, "MoveCourier", new Vector3(1, 0, 1), 1f);
+                Move(ship, new Vector3(1, 0, 1), 1f);
                 Require(Mathf.Abs(Vector3.Distance(courier.position, start) - 1) < .001f, "Diagonal speed changed.");
                 courier.position = new Vector3(-4, 0, -.6f);
-                Invoke(ship, "MoveCourier", Vector3.right, 100f);
+                Move(ship, Vector3.right, 100f);
                 Require(Mathf.Abs(courier.position.x - 13.2f) < .001f, "Deck movement bounds failed.");
                 // Glass blocks entry from the front; the left landing door admits the player.
                 courier.position = new Vector3(.3f, 0, 3.8f);
-                Invoke(ship, "MoveCourier", Vector3.back, 2f);
+                Move(ship, Vector3.back, 2f);
                 Require(courier.position.z >= 3.1f, "Courier walked through the front glass.");
                 courier.position = new Vector3(-1.4f, 0, 1.8f);
-                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
+                Move(ship, Vector3.right, 1.5f);
                 Require(courier.position.x > -.1f, "Open left landing door is blocked.");
                 foreach (var renderer in ship.GetComponentsInChildren<Renderer>())
                     Require(!renderer.bounds.Contains(new Vector3(.3f, 3.9f, 1.8f)), "Upper deck blocks the lift shaft opening.");
                 Capture("lift-bottom", false);
-                Invoke(ship, "Interact");
+                ship.Interact();
                 Require(lift.IsRiding && lift.IsMoving && Mathf.Abs(courier.position.y) < .001f, "Lift teleported instead of starting a ride.");
                 SessionState.SetFloat("Orbita.CharacterCheck.LiftStart", Time.time);
                 Capture("lift-frame-000", false);
@@ -388,7 +383,7 @@ public static class CharacterIntegrationCheck
                     Find("Holographic planet").localEulerAngles.y)) > .01f, "Hologram planet does not rotate.");
                 Require(Mathf.Abs(owl.position.y - courier.position.y - 1.05f) < .1f, "Owl did not follow to upper deck.");
                 Capture("characters-upper-deck", false);
-                Invoke(ship, "Interact");
+                ship.Interact();
                 Require(lift.IsRiding && Mathf.Abs(courier.position.y-4.1f) < .001f, "Lift down teleported or failed to start.");
                 SessionState.SetInt(StageKey, 3);
                 ticks = 0;
@@ -408,16 +403,16 @@ public static class CharacterIntegrationCheck
                 Require(lift.CurrentDeck == 0 && Mathf.Abs(courier.position.y) < .001f, "Lift down failed.");
                 Require(Mathf.Abs(owl.position.y - courier.position.y - 1.05f) < .1f, "Owl did not return to lower deck.");
                 courier.position = new Vector3(.4f, 0, -.6f);
-                Invoke(ship, "Interact");
-                Require((bool)typeof(CourierShip).GetField("terminal", Private).GetValue(ship), "Terminal interaction regressed.");
-                typeof(CourierShip).GetField("terminal", Private).SetValue(ship, false);
+                ship.Interact();
+                Require(ship.Terminal.IsOpen, "Terminal interaction regressed.");
+                ship.Terminal.Close();
                 // Simulate a passenger waiting upstairs: an absent platform must be callable.
                 courier.position = new Vector3(-1.4f, 4.1f, 1.8f);
-                typeof(CourierShip).GetField("deck", Private).SetValue(ship, 1);
-                Invoke(ship, "MoveCourier", Vector3.right, 2f);
+                ship.Motor.Deck = 1;
+                Move(ship, Vector3.right, 2f);
                 Require(courier.position.x < -1.10f, "Closed landing door admits the passenger into an empty shaft.");
                 courier.position = new Vector3(-1.4f, 4.1f, 1.8f);
-                Invoke(ship, "Interact");
+                ship.Interact();
                 Require(lift.IsMoving && !lift.IsRiding, "Empty lift call failed.");
                 SessionState.SetInt(StageKey, 6);
                 ticks = 0;
@@ -427,8 +422,8 @@ public static class CharacterIntegrationCheck
                 Require(Mathf.Abs(courier.position.y-4.1f) < .001f, "Empty lift moved the waiting passenger.");
                 if (lift.IsMoving) return;
                 Require(lift.CurrentDeck == 1, "Called lift did not arrive upstairs.");
-                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
-                Invoke(ship, "Interact");
+                Move(ship, Vector3.right, 1.5f);
+                ship.Interact();
                 Require(lift.IsRiding, "Passenger cannot board after calling the lift.");
                 SessionState.SetInt(StageKey, 7);
                 ticks = 0;
@@ -444,7 +439,7 @@ public static class CharacterIntegrationCheck
                 foreach (var renderer in ship.GetComponentsInChildren<Renderer>())
                     Require(!renderer.bounds.Contains(new Vector3(.3f, -.25f, 1.8f)), "Living deck blocks the underground shaft.");
                 SessionState.SetFloat("Orbita.CharacterCheck.HomeCameraY", Camera.main.transform.position.y);
-                Invoke(ship, "Descend");
+                ship.Descend();
                 Require(lift.IsRiding && lift.DestinationDeck == -1 && Mathf.Abs(courier.position.y) < .001f,
                     "R does not start a continuous descent to the hangar.");
                 Capture("hangar-frame-000", false);
@@ -470,7 +465,7 @@ public static class CharacterIntegrationCheck
                     }
                     return;
                 }
-                Require(lift.CurrentDeck == -1 && Mathf.Abs(courier.position.y-ShipLift.HangarHeight) < .001f,
+                Require(lift.CurrentDeck == -1 && Mathf.Abs(courier.position.y-ShipLayout.HangarHeight) < .001f,
                     "Hangar arrival height is incorrect.");
                 Require(courier.parent != lift.Platform, "Hangar passenger was not released.");
                 Require(Camera.main.transform.position.y < SessionState.GetFloat("Orbita.CharacterCheck.HomeCameraY", 0)-3,
@@ -482,23 +477,23 @@ public static class CharacterIntegrationCheck
                 foreach (var renderer in hangar.Interior.GetComponentsInChildren<Renderer>())
                     foreach (var material in renderer.sharedMaterials)
                         Require(material != null && material.shader.isSupported, "Hangar has an unsupported material.");
-                Require(!((bool)typeof(CourierShip).GetMethod("AtTerminal", Private).Invoke(ship, null)),
+                Require(!ship.AtTerminal,
                     "Terminal can be used from the underground floor.");
                 Capture("hangar-frame-021", false);
                 Capture("hangar-overview", false);
                 Capture("hangar-craft", false);
-                Invoke(ship, "MoveCourier", Vector3.left, 2);
+                Move(ship, Vector3.left, 2);
                 Require(courier.position.x < -1.1f, "Cannot exit the lift into the hangar.");
-                courier.position = new Vector3(-2, ShipLift.HangarHeight, 3.6f);
-                Invoke(ship, "MoveCourier", Vector3.right, 100);
+                courier.position = new Vector3(-2, ShipLayout.HangarHeight, 3.6f);
+                Move(ship, Vector3.right, 100);
                 Require(Mathf.Abs(courier.position.x-17.2f) < .001f, "Hangar right bounds failed.");
-                Invoke(ship, "MoveCourier", Vector3.left, 100);
+                Move(ship, Vector3.left, 100);
                 Require(Mathf.Abs(courier.position.x+17.2f) < .001f, "Hangar left bounds failed.");
-                Invoke(ship, "MoveCourier", Vector3.forward, 100);
+                Move(ship, Vector3.forward, 100);
                 Require(Mathf.Abs(courier.position.z-5.4f) < .001f, "Hangar front bounds failed.");
-                courier.position = new Vector3(-1.4f, ShipLift.HangarHeight, 1.8f);
-                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
-                Invoke(ship, "Interact");
+                courier.position = new Vector3(-1.4f, ShipLayout.HangarHeight, 1.8f);
+                Move(ship, Vector3.right, 1.5f);
+                ship.Interact();
                 Require(lift.IsRiding && lift.DestinationDeck == 0, "E does not return from the hangar.");
                 SessionState.SetInt(StageKey, 9);
                 ticks = 0;
@@ -511,22 +506,22 @@ public static class CharacterIntegrationCheck
                 Require(FindInactive("Panoramic city window").gameObject.activeInHierarchy, "Home did not reappear on return.");
                 Require(!UnityEngine.Object.FindFirstObjectByType<ShipHangar>().Interior.gameObject.activeSelf,
                     "Hangar remains visible after returning home.");
-                courier.position = new Vector3(-1.4f, ShipLift.HangarHeight, 1.8f);
-                typeof(CourierShip).GetField("deck", Private).SetValue(ship, -1);
-                Invoke(ship, "MoveCourier", Vector3.right, 2);
+                courier.position = new Vector3(-1.4f, ShipLayout.HangarHeight, 1.8f);
+                ship.Motor.Deck = -1;
+                Move(ship, Vector3.right, 2);
                 Require(courier.position.x < -1.1f, "Absent hangar platform leaves an open shaft.");
-                Invoke(ship, "Interact");
+                ship.Interact();
                 Require(lift.IsMoving && !lift.IsRiding, "Empty lift cannot be called from the hangar.");
                 SessionState.SetInt(StageKey, 10);
                 ticks = 0;
             }
             else if (stage == 10)
             {
-                Require(Mathf.Abs(courier.position.y-ShipLift.HangarHeight) < .001f, "Empty call moved hangar passenger.");
+                Require(Mathf.Abs(courier.position.y-ShipLayout.HangarHeight) < .001f, "Empty call moved hangar passenger.");
                 if (lift.IsMoving) return;
                 Require(lift.CurrentDeck == -1, "Empty lift failed to reach hangar.");
-                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
-                Invoke(ship, "Interact");
+                Move(ship, Vector3.right, 1.5f);
+                ship.Interact();
                 Require(lift.IsRiding && lift.DestinationDeck == 0, "Cannot board a called hangar platform.");
                 SessionState.SetInt(StageKey, 11);
                 ticks = 0;
@@ -567,7 +562,7 @@ public static class CharacterIntegrationCheck
         Require(Mathf.Abs(courier.position.y-lift.Platform.position.y) < .002f, "Passenger drifted off the platform.");
         Require(Mathf.Abs(owl.position.y-courier.position.y-1.05f) < .10f, "Owl left the moving cabin.");
         var position = courier.position;
-        Invoke(ship, "MoveCourier", Vector3.right, 1f);
+        Move(ship, Vector3.right, 1f);
         Require(Vector3.Distance(position, courier.position) < .001f, "Movement was not locked during travel.");
         Require(!lift.TryUse(lift.CurrentDeck), "Repeated interaction restarted a moving lift.");
     }

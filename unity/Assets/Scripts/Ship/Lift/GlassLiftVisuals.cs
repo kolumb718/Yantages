@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,14 +6,13 @@ public sealed class GlassLiftVisuals : MonoBehaviour
 {
     public Transform Platform { get; private set; }
 
-    readonly List<Material> ownedMaterials = new List<Material>();
+    readonly SceneKit kit = new SceneKit();
     readonly Transform[,] doorLeaves = new Transform[3, 2];
     readonly Renderer[] levelIndicators = new Renderer[3];
     Transform shaft, section;
     public Transform Underground { get; private set; }
     public Transform Upper { get; private set; }
     Material graphite, rail, deckMaterial, glass, mint, amber, dark;
-    Font font;
     bool built;
 
     public void Build(Transform ship, Vector3 centre)
@@ -30,7 +28,7 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         dark = Surface("Lift dark recess", new Color(.075f, .11f, .13f), .20f, 0);
         mint = LightMaterial("Lift cyan guidance", new Color(.38f, .88f, .86f));
         amber = LightMaterial("Lift travel amber", new Color(.96f, .65f, .28f));
-        glass = Surface("Lift Glass transparent blue", new Color(.47f, .79f, .85f, .055f), .62f, 0);
+        glass = kit.Surface("Lift Glass transparent blue", new Color(.47f, .79f, .85f, .055f), .62f, 0);
         glass.SetFloat("_Mode", 2);
         glass.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
         glass.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
@@ -40,7 +38,6 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         glass.DisableKeyword("_ALPHAPREMULTIPLY_ON");
         glass.SetOverrideTag("RenderType", "Transparent");
         glass.renderQueue = (int)RenderQueue.Transparent;
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         Upper = new GameObject("Residential lift shaft").transform;
         Upper.SetParent(shaft, false);
@@ -49,77 +46,42 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         BuildGlass();
         BuildPlatform();
         BuildLanding(0, 0);
-        BuildLanding(1, 4.1f);
+        BuildLanding(1, ShipLayout.DeckHeight);
         Caption("Lift shaft header", "ЛИФТ / 00-02", new Vector3(0, 6.52f, 1.055f), .14f);
         Underground = new GameObject("Underground lift shaft").transform;
         Underground.SetParent(shaft, false);
         section = Underground;
         BuildUnderground();
-        BuildLanding(-1, ShipLift.HangarHeight);
+        BuildLanding(-1, ShipLayout.HangarHeight);
         section = null;
         Underground.gameObject.SetActive(false);
-        SetState(0, false, true);
     }
 
     Material Surface(string name, Color color, float smoothness, float metallic)
-    {
-        var shader = Shader.Find("Standard");
-        if (shader == null) throw new MissingReferenceException("Standard shader is required for the glass lift.");
-        var material = new Material(shader) { name = name, color = color };
-        material.SetFloat("_Glossiness", smoothness);
-        material.SetFloat("_Metallic", metallic);
-        ownedMaterials.Add(material);
-        return material;
-    }
+        => kit.Surface(name, color, smoothness, metallic);
 
-    Material LightMaterial(string name, Color color)
-    {
-        var material = Surface(name, color, .30f, 0);
-        material.EnableKeyword("_EMISSION");
-        material.SetColor("_EmissionColor", color*.30f);
-        return material;
-    }
+    Material LightMaterial(string name, Color color) => kit.Emissive(name, color, .30f, .30f);
+
+    Transform Section => section != null ? section : shaft;
 
     GameObject Shape(string name, PrimitiveType type, Vector3 position, Vector3 size,
         Material material, Transform parent = null)
     {
-        var item = GameObject.CreatePrimitive(type);
-        item.name = name;
-        item.transform.SetParent(parent != null ? parent : section != null ? section : shaft, false);
-        item.transform.localPosition = position;
-        item.transform.localScale = size;
-        var renderer = item.GetComponent<Renderer>();
-        renderer.sharedMaterial = material;
+        var item = kit.Shape(name, type, position, size, material, parent != null ? parent : Section);
         if (material == glass)
         {
+            var renderer = item.GetComponent<Renderer>();
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
-        Destroy(item.GetComponent<Collider>());
         return item;
     }
 
     GameObject Box(string name, Vector3 position, Vector3 size, Material material, Transform parent = null)
-    {
-        return Shape(name, PrimitiveType.Cube, position, size, material, parent);
-    }
+        => Shape(name, PrimitiveType.Cube, position, size, material, parent);
 
     void Caption(string name, string text, Vector3 position, float size)
-    {
-        var item = new GameObject(name);
-        item.transform.SetParent(section != null ? section : shaft, false);
-        item.transform.localPosition = position;
-        item.transform.localRotation = Quaternion.Euler(0, 180, 0);
-        var label = item.AddComponent<TextMesh>();
-        label.font = font;
-        label.fontSize = 64;
-        label.characterSize = size*10/label.fontSize;
-        label.anchor = TextAnchor.MiddleCenter;
-        label.alignment = TextAlignment.Center;
-        label.color = new Color(.75f, .89f, .87f);
-        label.text = text;
-        item.GetComponent<MeshRenderer>().sharedMaterial = font.material;
-    }
+        => kit.Caption(name, text, position, size, new Color(.75f, .89f, .87f), Section);
 
     void BuildFrame()
     {
@@ -194,7 +156,7 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         for (int side = 0; side < 2; side++)
         {
             var leaf = new GameObject("Lift Glass door assembly "+level+" "+side).transform;
-            leaf.SetParent(section != null ? section : shaft, false);
+            leaf.SetParent(Section, false);
             leaf.localPosition = new Vector3(-1.095f, y+1.13f, side == 0 ? -.325f : .325f);
             doorLeaves[level+1, side] = leaf;
             Box("Lift Glass door leaf", Vector3.zero, new Vector3(.018f, 2.18f, .65f), glass, leaf);
@@ -211,7 +173,7 @@ public sealed class GlassLiftVisuals : MonoBehaviour
 
     void BuildUnderground()
     {
-        float bottom = ShipLift.HangarHeight;
+        float bottom = ShipLayout.HangarHeight;
         float height = -bottom;
         foreach (float x in new[] { -1.115f, 1.115f })
             foreach (float z in new[] { -1.015f, 1.015f })
@@ -230,28 +192,25 @@ public sealed class GlassLiftVisuals : MonoBehaviour
             Box("Underground guide height mark", new Vector3(1.075f, -.48f*i, .94f), new Vector3(.026f, .018f, .09f), i%3 == 0 ? mint : rail);
     }
 
-    public void SetState(int deck, bool moving, bool open)
+    // 0 = closed, 1 = open. Telescoping leaves slide into the narrow glass side pockets.
+    public void SetDoor(int level, float opening)
     {
-        for (int level = -1; level <= 1; level++)
+        for (int side = 0; side < 2; side++)
         {
-            bool isOpen = open && !moving && deck == level;
-            for (int side = 0; side < 2; side++)
-            {
-                var leaf = doorLeaves[level+1, side];
-                if (leaf == null) continue;
-                float sign = side == 0 ? -1 : 1;
-                // Telescoping leaves park inside the narrow glass side pockets.
-                leaf.localPosition = new Vector3(-1.095f, ShipLift.FloorHeight(level)+1.13f, sign*(isOpen ? .875f : .325f));
-                leaf.localScale = new Vector3(1, 1, isOpen ? .44f : 1);
-            }
-            if (levelIndicators[level+1] != null)
-                levelIndicators[level+1].sharedMaterial = moving ? amber : deck == level ? mint : dark;
+            var leaf = doorLeaves[level+1, side];
+            if (leaf == null) continue;
+            float sign = side == 0 ? -1 : 1;
+            leaf.localPosition = new Vector3(-1.095f, ShipLayout.FloorHeight(level)+1.13f, sign*Mathf.Lerp(.325f, .875f, opening));
+            leaf.localScale = new Vector3(1, 1, Mathf.Lerp(1, .44f, opening));
         }
     }
 
-    void OnDestroy()
+    public void SetIndicators(int deck, bool moving)
     {
-        foreach (var material in ownedMaterials)
-            if (material != null) Destroy(material);
+        for (int level = ShipLayout.HangarDeck; level <= ShipLayout.CabinDeck; level++)
+            if (levelIndicators[level+1] != null)
+                levelIndicators[level+1].sharedMaterial = moving ? amber : deck == level ? mint : dark;
     }
+
+    void OnDestroy() => kit.Release();
 }
