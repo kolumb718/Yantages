@@ -37,6 +37,20 @@ public static class ShipLayout
     public const float ClothingWardrobeReach = 1.45f;
     public static readonly Vector3 CourierBagPosition = new Vector3(0, 1.24f, -.19f);
     public static readonly Vector3 CourierBagSize = new Vector3(.32f, .36f, .13f);
+    public static readonly Vector3 GalleyDetailPosition = new Vector3(-3, 0, -4.1f);
+    public static readonly Vector3 GalleyFridgePosition = new Vector3(-4.95f, 0, -4.05f);
+    public static readonly Vector3 GalleyFridgeSize = new Vector3(.72f, 1.7f, .72f);
+    public static readonly Vector3 GalleyStoolPosition = new Vector3(-3, 0, -2.8f);
+    public static readonly Vector3 GalleyStoolSize = new Vector3(.42f, .65f, .42f);
+    public static readonly Vector3 LoungeSideTablePosition = new Vector3(-11.85f, 0, -1.8f);
+    public static readonly Vector3 LoungeSideTableSize = new Vector3(.50f, .56f, .50f);
+    public static readonly Vector3 LoungeCoffeeDetailPosition = new Vector3(-9, CoffeeTableTop, .6f);
+    public static readonly Vector3 LoungeSofaDetailPosition = new Vector3(-10, 0, -1.8f);
+    public static readonly Vector3 LoungeMemoryBoardPosition = new Vector3(-8.1f, 1.9f, -4.7f);
+    public static readonly Vector3 LivingParcelShelfPosition = new Vector3(-12.45f, 0, -4.05f);
+    public static readonly Vector3 LivingParcelShelfSize = new Vector3(1.15f, 1.95f, .55f);
+    public static readonly Vector3 LivingStorageBenchPosition = new Vector3(-11.8f, 0, 3.55f);
+    public static readonly Vector3 LivingStorageBenchSize = new Vector3(1.25f, .58f, .62f);
 
     public static float FloorHeight(int deck) => deck < 0 ? HangarHeight : deck * DeckHeight;
 

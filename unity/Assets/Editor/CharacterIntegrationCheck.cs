@@ -83,8 +83,14 @@ public static class CharacterIntegrationCheck
             {
                 bounds.Encapsulate(renderer.bounds);
                 foreach (var material in renderer.sharedMaterials)
+                {
                     Require(material != null && material.shader != null && material.shader.isSupported
-                        && material.mainTexture != null, name + " has a missing, untextured or unsupported material.");
+                        , name + " / " + renderer.name + " has a missing or unsupported material.");
+                    // Imported skinned characters retain their texture maps. The optional
+                    // courier backpack is palette-coloured primitive geometry, like scenery.
+                    if (renderer is SkinnedMeshRenderer)
+                        Require(material.mainTexture != null, name + " / " + renderer.name + " lost its imported texture.");
+                }
             }
             var animator = actor.GetComponentInChildren<Animator>();
             Require(animator != null && animator.runtimeAnimatorController != null && animator.isInitialized,

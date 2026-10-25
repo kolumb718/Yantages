@@ -44,6 +44,10 @@ public sealed class CourierShip : MonoBehaviour
         interior.Build(transform);
         gameObject.AddComponent<ShipWindowView>().Build(transform);
         GetComponent<ShipFurnishings>().Build();
+        var living = gameObject.AddComponent<LivingDeckDressing>();
+        living.Build(transform);
+        var galley = gameObject.AddComponent<LivingGalleyDetails>();
+        galley.Build(transform);
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
         gameObject.AddComponent<ShipWardrobe>().Build(transform);
         var wardrobe = gameObject.AddComponent<CabinWardrobe>();
@@ -63,6 +67,8 @@ public sealed class CourierShip : MonoBehaviour
         Lift.Build(transform, courier, characters);
         Motor = new CourierMotor(courier, Lift);
         Motor.AddObstacle(wardrobe.Root, .02f);
+        foreach (var obstacle in living.Obstacles) Motor.AddObstacle(obstacle, .02f);
+        foreach (var obstacle in galley.Obstacles) Motor.AddObstacle(obstacle, .02f);
         foreach (var obstacle in interior.Obstacles) Motor.AddObstacle(obstacle, .02f);
         Motor.AddObstacle(aviary.Root, .05f);
         foreach (var (name, inset) in PropObstacles)

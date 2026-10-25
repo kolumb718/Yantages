@@ -141,6 +141,7 @@ public static class ShipSystemsCheck
                 CheckBuildSafety();
                 CheckInput(ship);
                 CheckScaleAndOrbit(ship, framing);
+                CheckLivingDeckDetails(ship);
                 var screen = OnScreen(camera, courier);
                 Log("follow start: camera " + camera.transform.position + " courier screen " + screen);
                 Require(Mathf.Abs(screen.x) <= .32f && Mathf.Abs(screen.y) <= .26f, "Courier starts outside the camera window.");
@@ -396,6 +397,70 @@ public static class ShipSystemsCheck
         camera.ApplyLook(new Vector2(-180,0),0);
         ship.Motor.Courier.position = saved; camera.UpdateDeckView();
         Log("scale and orbit: five-metre floor-level window, furniture XYZ, terminal, EVA suit, orbit controls, wall clearance PASS");
+    }
+
+    static void CheckLivingDeckDetails(CourierShip ship)
+    {
+        foreach (string name in new[] { "Galley refrigerator", "Galley breakfast stool", "Galley compact coffee maker",
+            "Galley sink basin", "Galley fresh citrus", "Galley pantry jar", "Lounge reading lampshade",
+            "Lounge coffee mug", "Lounge star atlas pages", "Lounge sofa cushion", "Sofa folded throw",
+            "Kristi travel memory board", "Living parcel rack", "Stored courier parcel", "Living storage bench" })
+            Require(GameObject.Find(name)!=null,"Living-deck detail missing: "+name);
+        Require(Mathf.Abs(BoundsOf("Galley refrigerator").size.y-ShipLayout.GalleyFridgeSize.y)<.03f,
+            "Refrigerator is not human-sized.");
+        var courier = ship.Motor.Courier;
+        var saved = courier.position;
+        try
+        {
+            // Follow actual walkable corridors; each segment uses the same motor as Update.
+            // Keyboard input itself is covered immediately afterwards by the existing D check.
+            courier.position = ShipLayout.CourierStart;
+            WalkTo(ship,new Vector3(-4,0,-.6f));
+            WalkTo(ship,ShipLayout.TerminalPosition);
+            Require(ship.AtTerminal,"Dressing blocks access to terminal.");
+            WalkTo(ship,new Vector3(-1.4f,0,-.6f));
+            WalkTo(ship,new Vector3(-1.4f,0,1.8f));
+            WalkTo(ship,new Vector3(.1f,0,1.8f));
+            Require(ship.AtLift,"Dressing blocks lift boarding.");
+            courier.position = ShipLayout.CourierStart;
+            WalkTo(ship,new Vector3(-7.8f,0,.6f));
+            WalkTo(ship,new Vector3(-7.8f,0,-.6f));
+            WalkTo(ship,new Vector3(-10,0,-.6f));
+            courier.position = ShipLayout.CourierStart;
+            WalkTo(ship,new Vector3(-1.4f,0,-.6f));
+            WalkTo(ship,new Vector3(6,0,-.6f));
+            BlockedFurniture(ship,"Galley refrigerator",ShipLayout.GalleyFridgePosition);
+            BlockedFurniture(ship,"Galley breakfast stool",ShipLayout.GalleyStoolPosition);
+            BlockedFurniture(ship,"Living parcel rack",ShipLayout.LivingParcelShelfPosition);
+            BlockedFurniture(ship,"Living storage bench",ShipLayout.LivingStorageBenchPosition);
+            BlockedFurniture(ship,"Lounge lamp side table",ShipLayout.LoungeSideTablePosition);
+            CaptureFrom("living-deck-lounge",new Vector3(-6.4f,2.45f,5),new Vector3(-10,1.05f,-1));
+            CaptureFrom("living-deck-galley",new Vector3(-.9f,1.95f,-.2f),new Vector3(-3.3f,1.12f,-4.1f));
+            CaptureFrom("living-deck-parcels",new Vector3(-9.2f,1.8f,-.6f),new Vector3(-12.1f,1.0f,-3.4f));
+            CaptureFrom("living-deck-storage",new Vector3(-7,1.7f,3.8f),new Vector3(-11.5f,.65f,3.1f));
+            Log("living deck: household objects, human-sized fridge, obstacles, sofa/terminal/lift/bridge routes PASS (motor path; keyboard checked separately)");
+        }
+        finally { courier.position=saved; }
+    }
+
+    static void WalkTo(CourierShip ship,Vector3 destination)
+    {
+        var courier=ship.Motor.Courier;
+        var start=courier.position;
+        var delta=destination-start;
+        int steps=Mathf.CeilToInt(delta.magnitude/.05f);
+        for(int i=0;i<steps;i++) ship.Motor.Move(delta.normalized,delta.magnitude/steps);
+        Require(Vector3.Distance(courier.position,destination)<.06f,
+            "Dressing blocks corridor from "+start+" to "+destination+" at "+courier.position);
+    }
+
+    static void BlockedFurniture(CourierShip ship,string name,Vector3 position)
+    {
+        var bounds=BoundsOf(name);
+        ship.Motor.Courier.position=new Vector3(position.x,0,bounds.max.z+.7f);
+        ship.Motor.Move(Vector3.back,2);
+        Require(ship.Motor.Courier.position.z>=bounds.max.z+CourierMotor.Radius-.05f,
+            "Courier can walk through "+name);
     }
 
     static void CheckObstacles(CourierShip ship)
