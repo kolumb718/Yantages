@@ -10,6 +10,7 @@ public sealed class CourierShip : MonoBehaviour
     int deck;
     bool terminal, accepted;
     ShipLift liftController;
+    ShipCameraFraming framing;
     GUIStyle title, text;
 
     Material Material(string hex, bool glow = false)
@@ -106,7 +107,7 @@ public sealed class CourierShip : MonoBehaviour
         liftController=gameObject.AddComponent<ShipLift>();
         liftController.Build(transform,player,GetComponent<CourierCharacters>());
         liftController.PassengerArrived += floor => deck=floor;
-        var framing = gameObject.AddComponent<ShipCameraFraming>();
+        framing = gameObject.AddComponent<ShipCameraFraming>();
         framing.Initialize(camera, transform);
         var hangar = gameObject.AddComponent<ShipHangar>();
         hangar.Build(transform);
@@ -118,9 +119,13 @@ public sealed class CourierShip : MonoBehaviour
     void Update()
     {
         if(Input.GetKeyDown(KeyCode.Escape)) terminal=false;
+        if(Input.GetKeyDown(KeyCode.C) && framing != null) framing.Follow=!framing.Follow;
         if(terminal || (liftController != null && liftController.IsRiding)) return;
         float x=(Input.GetKey(KeyCode.D)||Input.GetKey(KeyCode.RightArrow)?1:0)-(Input.GetKey(KeyCode.A)||Input.GetKey(KeyCode.LeftArrow)?1:0);
         float z=(Input.GetKey(KeyCode.S)||Input.GetKey(KeyCode.DownArrow)?1:0)-(Input.GetKey(KeyCode.W)||Input.GetKey(KeyCode.UpArrow)?1:0);
+        // The cutaway is viewed from +Z, so world +X is screen-left: keep D moving right on screen.
+        var view=Camera.main;
+        if(view!=null && view.transform.right.x<0) x=-x;
         MoveCourier(new Vector3(x,0,z),Time.deltaTime*(Input.GetKey(KeyCode.LeftShift)?6:4));
         if(Input.GetKeyDown(KeyCode.E)) Interact();
         if(Input.GetKeyDown(KeyCode.R)) Descend();
@@ -154,9 +159,9 @@ public sealed class CourierShip : MonoBehaviour
     {
         if(player==null) return;
         if(title==null) { title=new GUIStyle(GUI.skin.label){fontSize=25}; text=new GUIStyle(GUI.skin.label){fontSize=17,wordWrap=true}; }
-        GUI.Label(new Rect(28,22,650,40),"ОРБИТА / МЕЖПЛАНЕТНАЯ ДОСТАВКА",title);
+        GUI.Label(new Rect(28,22,800,40),"ОРБИТА / " + CourierCharacters.DisplayName + " · МЕЖПЛАНЕТНАЯ ДОСТАВКА",title);
         GUI.Label(new Rect(28,65,650,32),deck < 0 ? "УРОВЕНЬ 00 · ПОДЗЕМНЫЙ АНГАР" : deck==0?"ПАЛУБА 01 · ГОСТИНАЯ И МОСТИК":"ПАЛУБА 02 · ДОМА, НАВЕРХУ",text);
-        GUI.Label(new Rect(28,Screen.height-44,1100,35),"WASD / стрелки — ходить · Shift — быстрее · E — терминал / лифт · R — вниз в ангар · Esc — закрыть",text);
+        GUI.Label(new Rect(28,Screen.height-44,1100,35),"WASD / стрелки — ходить · Shift — быстрее · E — терминал / лифт · R — вниз в ангар · C — камера · Esc — закрыть",text);
         if(!terminal) { GUI.Label(new Rect(Screen.width/2-220,Screen.height-105,600,40),
             liftController != null && (AtLift() || liftController.IsRiding) ? liftController.Hint(player.position,deck)
             : AtTerminal()?"E · Открыть заказ":"",text); return; }

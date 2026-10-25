@@ -3,6 +3,7 @@ using UnityEngine;
 // Presentation of the imported characters; movement and interactions stay in CourierShip.
 public sealed class CourierCharacters : MonoBehaviour
 {
+    public const string DisplayName = "Кристи";
     [SerializeField] GameObject courierPrefab;
     [SerializeField] GameObject owlPrefab;
 

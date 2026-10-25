@@ -10,7 +10,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/ | Новая основная версия |
 | unity/Assets/Scripts/CourierShip.cs | Генерация интерьера, движение, лифт, заказ и IMGUI |
 | unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
-| unity/Assets/Scripts/ShipCameraFraming.cs | Кадрирование дома/ангара, переход по высоте пассажира и видимость этажей |
+| unity/Assets/Scripts/ShipCameraFraming.cs | Кадрирование дома/ангара, camera-window слежение (C — обзор), переход по высоте пассажира и видимость этажей |
 | unity/Assets/Scripts/ShipFurnishings.cs | Размещение мебели и растений из prefab |
 | unity/Assets/Scripts/ShipWindowView.cs | Городская сценография и параллакс по положению камеры |
 | unity/Assets/Shaders/WindowCity.shader | Обрезка движущихся слоёв города по оконному проёму |

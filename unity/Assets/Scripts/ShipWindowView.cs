@@ -10,7 +10,16 @@ public sealed class ShipWindowView : MonoBehaviour
     Vector3 referenceCamera;
     bool hasReference;
 
+    // Parallax is zero when the camera stands at this world position (the whole-ship overview).
+    public void SetReference(Vector3 cameraPosition)
+    {
+        if (!built) return;
+        referenceCamera = windowRoot.InverseTransformPoint(cameraPosition);
+        hasReference = true;
+    }
+
     // Absolute camera offsets in ship space avoid drift on a return trip.
+    // ShipCameraFraming calls this after placing the camera, so layers never lag a frame.
     public void UpdateView(Camera camera)
     {
         if (!built || camera == null) return;
@@ -27,7 +36,6 @@ public sealed class ShipWindowView : MonoBehaviour
                 material.SetMatrix("_WorldToWindow", windowRoot.worldToLocalMatrix);
     }
 
-    void LateUpdate() { UpdateView(Camera.main); }
     readonly List<Material> materials = new List<Material>();
     Transform windowRoot;
     Texture2D skyTexture;

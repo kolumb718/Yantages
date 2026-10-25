@@ -1,0 +1,8 @@
+follow start camera (7.22, 6.30, 14.25) courier (-4.00, 0.00, 0.60) screen (0.30, 0.04)
+dead-zone drift 0,0005
+before walk right courier (-3.70, 0.00, -0.60) screen (0.21, 0.07)
+after walk right: courier x 8,30 camera pan -5,72 screen (-0.30, -0.19)
+after walk left: courier x -13,20 screen (0.41, 0.19)
+overview toggle distance to fitted overview 0,0017
+follow re-enabled screen (0.41, 0.19)
+ORBITA_CAMERA_WINDOW_PASS
