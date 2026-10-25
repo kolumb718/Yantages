@@ -25,6 +25,8 @@ public static class CharacterIntegrationCheck
         FurnitureSetup.Prepare();
         Directory.CreateDirectory("Captures");
         File.WriteAllText("Captures/lift-animation-times.csv", "");
+        File.WriteAllText("Captures/hangar-animation-times.csv", "");
+        SessionState.SetInt("Orbita.CharacterCheck.HangarFrame", -1);
         SessionState.SetInt("Orbita.CharacterCheck.LiftFrame", -1);
         SessionState.SetBool("Orbita.CharacterCheck.LiftMiddle", false);
         SessionState.SetBool("Orbita.CharacterCheck.LiftDownMiddle", false);
@@ -59,6 +61,13 @@ public static class CharacterIntegrationCheck
         var obj = GameObject.Find(name);
         Require(obj != null, "Missing runtime object: " + name);
         return obj.transform;
+    }
+
+    static Transform FindInactive(string name)
+    {
+        foreach (var item in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (item.name == name) return item;
+        throw new Exception("Missing runtime object: " + name);
     }
 
     static void ValidateCharacters()
@@ -192,7 +201,8 @@ public static class CharacterIntegrationCheck
         float aspect = camera.aspect;
         var previousTarget = camera.targetTexture;
         var previousActive = RenderTexture.active;
-        bool animationFrame = name.StartsWith("lift-frame-");
+        bool hangarFrame = name.StartsWith("hangar-frame-");
+        bool animationFrame = name.StartsWith("lift-frame-") || hangarFrame;
         bool parallax = name.StartsWith("parallax-");
         int width = animationFrame || parallax ? 800 : 1600, height = animationFrame ? 800 : parallax ? 500 : 1000;
         var target = new RenderTexture(width, height, 24);
@@ -225,6 +235,12 @@ public static class CharacterIntegrationCheck
                 camera.transform.LookAt(new Vector3(-10.2f, .65f, -1.8f));
                 camera.fieldOfView = 67;
             }
+            else if (name == "hangar-craft")
+            {
+                camera.transform.position = new Vector3(-16, -1.6f, 11);
+                camera.transform.LookAt(new Vector3(-6, -5.1f, -2.65f));
+                camera.fieldOfView = 48;
+            }
             else if (name == "details-window")
             {
                 camera.transform.position = new Vector3(10.0f, 5.2f, 5.5f);
@@ -251,7 +267,7 @@ public static class CharacterIntegrationCheck
             }
             camera.targetTexture = target;
             camera.aspect = (float)width / height;
-            if (!parallax && !close && !name.StartsWith("furniture-") && !name.StartsWith("details-")
+            if (name != "hangar-craft" && !parallax && !close && !name.StartsWith("furniture-") && !name.StartsWith("details-")
                 && (!name.StartsWith("lift-") || name == "lift-overview"))
                 UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
             UnityEngine.Object.FindFirstObjectByType<ShipWindowView>().UpdateView(camera);
@@ -262,7 +278,7 @@ public static class CharacterIntegrationCheck
             Directory.CreateDirectory("Captures");
             File.WriteAllBytes("Captures/" + name + ".png", image.EncodeToPNG());
             if (animationFrame)
-                File.AppendAllText("Captures/lift-animation-times.csv", name+","+Time.time.ToString("R", System.Globalization.CultureInfo.InvariantCulture)+"\n");
+                File.AppendAllText("Captures/"+(hangarFrame ? "hangar" : "lift")+"-animation-times.csv", name+","+Time.time.ToString("R", System.Globalization.CultureInfo.InvariantCulture)+"\n");
         }
         finally
         {
@@ -421,6 +437,105 @@ public static class CharacterIntegrationCheck
             {
                 if (lift.IsMoving) return;
                 Require(lift.CurrentDeck == 0 && Mathf.Abs(courier.position.y) < .001f, "Return ride after empty call failed.");
+                var framing = UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>();
+                framing.UpdateDeckView();
+                var hangar = UnityEngine.Object.FindFirstObjectByType<ShipHangar>();
+                Require(!hangar.Interior.gameObject.activeSelf, "Hangar is visible before descending.");
+                foreach (var renderer in ship.GetComponentsInChildren<Renderer>())
+                    Require(!renderer.bounds.Contains(new Vector3(.3f, -.25f, 1.8f)), "Living deck blocks the underground shaft.");
+                SessionState.SetFloat("Orbita.CharacterCheck.HomeCameraY", Camera.main.transform.position.y);
+                Invoke(ship, "Descend");
+                Require(lift.IsRiding && lift.DestinationDeck == -1 && Mathf.Abs(courier.position.y) < .001f,
+                    "R does not start a continuous descent to the hangar.");
+                Capture("hangar-frame-000", false);
+                SessionState.SetInt("Orbita.CharacterCheck.HangarFrame", 0);
+                SessionState.SetInt(StageKey, 8);
+                ticks = 0;
+            }
+            else if (stage == 8)
+            {
+                var framing = UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>();
+                framing.UpdateDeckView();
+                var hangar = UnityEngine.Object.FindFirstObjectByType<ShipHangar>();
+                if (lift.IsMoving)
+                {
+                    CheckRiding(ship, courier, owl, lift);
+                    if (courier.position.y < -.3f)
+                        Require(hangar.Interior.gameObject.activeSelf, "Hangar does not reveal during descent.");
+                    int bin = Mathf.FloorToInt(lift.Progress*20);
+                    if (bin > SessionState.GetInt("Orbita.CharacterCheck.HangarFrame", -1))
+                    {
+                        Capture("hangar-frame-"+bin.ToString("D3"), false);
+                        SessionState.SetInt("Orbita.CharacterCheck.HangarFrame", bin);
+                    }
+                    return;
+                }
+                Require(lift.CurrentDeck == -1 && Mathf.Abs(courier.position.y-ShipLift.HangarHeight) < .001f,
+                    "Hangar arrival height is incorrect.");
+                Require(courier.parent != lift.Platform, "Hangar passenger was not released.");
+                Require(Camera.main.transform.position.y < SessionState.GetFloat("Orbita.CharacterCheck.HomeCameraY", 0)-3,
+                    "Camera did not follow to the underground room.");
+                Require(hangar.Interior.gameObject.activeSelf && !FindInactive("Panoramic city window").gameObject.activeInHierarchy,
+                    "Underground cutaway does not hide the upper home.");
+                var hull = Find("Craft sculpted green hull").GetComponent<Renderer>();
+                Require(hull.bounds.size.x > 13 && hull.bounds.max.y < -.5f, "Hangar craft has incorrect size or height.");
+                foreach (var renderer in hangar.Interior.GetComponentsInChildren<Renderer>())
+                    foreach (var material in renderer.sharedMaterials)
+                        Require(material != null && material.shader.isSupported, "Hangar has an unsupported material.");
+                Require(!((bool)typeof(CourierShip).GetMethod("AtTerminal", Private).Invoke(ship, null)),
+                    "Terminal can be used from the underground floor.");
+                Capture("hangar-frame-021", false);
+                Capture("hangar-overview", false);
+                Capture("hangar-craft", false);
+                Invoke(ship, "MoveCourier", Vector3.left, 2);
+                Require(courier.position.x < -1.1f, "Cannot exit the lift into the hangar.");
+                courier.position = new Vector3(-2, ShipLift.HangarHeight, 3.6f);
+                Invoke(ship, "MoveCourier", Vector3.right, 100);
+                Require(Mathf.Abs(courier.position.x-17.2f) < .001f, "Hangar right bounds failed.");
+                Invoke(ship, "MoveCourier", Vector3.left, 100);
+                Require(Mathf.Abs(courier.position.x+17.2f) < .001f, "Hangar left bounds failed.");
+                Invoke(ship, "MoveCourier", Vector3.forward, 100);
+                Require(Mathf.Abs(courier.position.z-5.4f) < .001f, "Hangar front bounds failed.");
+                courier.position = new Vector3(-1.4f, ShipLift.HangarHeight, 1.8f);
+                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
+                Invoke(ship, "Interact");
+                Require(lift.IsRiding && lift.DestinationDeck == 0, "E does not return from the hangar.");
+                SessionState.SetInt(StageKey, 9);
+                ticks = 0;
+            }
+            else if (stage == 9)
+            {
+                if (lift.IsMoving) { CheckRiding(ship, courier, owl, lift); return; }
+                Require(lift.CurrentDeck == 0 && Mathf.Abs(courier.position.y) < .001f, "Hangar return failed.");
+                UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().UpdateDeckView();
+                Require(FindInactive("Panoramic city window").gameObject.activeInHierarchy, "Home did not reappear on return.");
+                Require(!UnityEngine.Object.FindFirstObjectByType<ShipHangar>().Interior.gameObject.activeSelf,
+                    "Hangar remains visible after returning home.");
+                courier.position = new Vector3(-1.4f, ShipLift.HangarHeight, 1.8f);
+                typeof(CourierShip).GetField("deck", Private).SetValue(ship, -1);
+                Invoke(ship, "MoveCourier", Vector3.right, 2);
+                Require(courier.position.x < -1.1f, "Absent hangar platform leaves an open shaft.");
+                Invoke(ship, "Interact");
+                Require(lift.IsMoving && !lift.IsRiding, "Empty lift cannot be called from the hangar.");
+                SessionState.SetInt(StageKey, 10);
+                ticks = 0;
+            }
+            else if (stage == 10)
+            {
+                Require(Mathf.Abs(courier.position.y-ShipLift.HangarHeight) < .001f, "Empty call moved hangar passenger.");
+                if (lift.IsMoving) return;
+                Require(lift.CurrentDeck == -1, "Empty lift failed to reach hangar.");
+                Invoke(ship, "MoveCourier", Vector3.right, 1.5f);
+                Invoke(ship, "Interact");
+                Require(lift.IsRiding && lift.DestinationDeck == 0, "Cannot board a called hangar platform.");
+                SessionState.SetInt(StageKey, 11);
+                ticks = 0;
+            }
+            else if (stage == 11)
+            {
+                if (lift.IsMoving) return;
+                Require(lift.CurrentDeck == 0, "Final hangar return failed.");
+                File.WriteAllText("Captures/hangar-check.txt", "PASS: hidden initial hangar, unobstructed ground-floor shaft, continuous six-second descent with passenger and owl, reveal during descent, camera transition, craft scale/materials, exit and walkable bounds, terminal excluded, return/home restoration, closed absent landing, empty hangar call, boarding and return.\n");
                 SessionState.SetInt(StageKey, 4);
                 EditorApplication.isPlaying = false;
             }

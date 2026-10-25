@@ -8,9 +8,11 @@ public sealed class GlassLiftVisuals : MonoBehaviour
     public Transform Platform { get; private set; }
 
     readonly List<Material> ownedMaterials = new List<Material>();
-    readonly Transform[,] doorLeaves = new Transform[2, 2];
-    readonly Renderer[] levelIndicators = new Renderer[2];
-    Transform shaft;
+    readonly Transform[,] doorLeaves = new Transform[3, 2];
+    readonly Renderer[] levelIndicators = new Renderer[3];
+    Transform shaft, section;
+    public Transform Underground { get; private set; }
+    public Transform Upper { get; private set; }
     Material graphite, rail, deckMaterial, glass, mint, amber, dark;
     Font font;
     bool built;
@@ -40,12 +42,22 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         glass.renderQueue = (int)RenderQueue.Transparent;
         font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
+        Upper = new GameObject("Residential lift shaft").transform;
+        Upper.SetParent(shaft, false);
+        section = Upper;
         BuildFrame();
         BuildGlass();
         BuildPlatform();
         BuildLanding(0, 0);
         BuildLanding(1, 4.1f);
-        Caption("Lift shaft header", "ЛИФТ / 01-02", new Vector3(0, 6.52f, 1.055f), .14f);
+        Caption("Lift shaft header", "ЛИФТ / 00-02", new Vector3(0, 6.52f, 1.055f), .14f);
+        Underground = new GameObject("Underground lift shaft").transform;
+        Underground.SetParent(shaft, false);
+        section = Underground;
+        BuildUnderground();
+        BuildLanding(-1, ShipLift.HangarHeight);
+        section = null;
+        Underground.gameObject.SetActive(false);
         SetState(0, false, true);
     }
 
@@ -73,7 +85,7 @@ public sealed class GlassLiftVisuals : MonoBehaviour
     {
         var item = GameObject.CreatePrimitive(type);
         item.name = name;
-        item.transform.SetParent(parent != null ? parent : shaft, false);
+        item.transform.SetParent(parent != null ? parent : section != null ? section : shaft, false);
         item.transform.localPosition = position;
         item.transform.localScale = size;
         var renderer = item.GetComponent<Renderer>();
@@ -95,7 +107,7 @@ public sealed class GlassLiftVisuals : MonoBehaviour
     void Caption(string name, string text, Vector3 position, float size)
     {
         var item = new GameObject(name);
-        item.transform.SetParent(shaft, false);
+        item.transform.SetParent(section != null ? section : shaft, false);
         item.transform.localPosition = position;
         item.transform.localRotation = Quaternion.Euler(0, 180, 0);
         var label = item.AddComponent<TextMesh>();
@@ -182,9 +194,9 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         for (int side = 0; side < 2; side++)
         {
             var leaf = new GameObject("Lift Glass door assembly "+level+" "+side).transform;
-            leaf.SetParent(shaft, false);
+            leaf.SetParent(section != null ? section : shaft, false);
             leaf.localPosition = new Vector3(-1.095f, y+1.13f, side == 0 ? -.325f : .325f);
-            doorLeaves[level, side] = leaf;
+            doorLeaves[level+1, side] = leaf;
             Box("Lift Glass door leaf", Vector3.zero, new Vector3(.018f, 2.18f, .65f), glass, leaf);
             Box("Glass door moving edge", new Vector3(-.015f, 0, side == 0 ? .313f : -.313f),
                 new Vector3(.022f, 2.18f, .022f), rail, leaf);
@@ -193,26 +205,47 @@ public sealed class GlassLiftVisuals : MonoBehaviour
         }
         var indicator = Box("Lift landing indicator "+level, new Vector3(-.96f, y+2.29f, .96f),
             new Vector3(.065f, .065f, .025f), mint);
-        levelIndicators[level] = indicator.GetComponent<Renderer>();
-        Caption("Lift landing number "+level, level == 0 ? "01" : "02", new Vector3(-.77f, y+2.29f, 1.055f), .14f);
+        levelIndicators[level+1] = indicator.GetComponent<Renderer>();
+        Caption("Lift landing number "+level, level < 0 ? "00" : level == 0 ? "01" : "02", new Vector3(-.77f, y+2.29f, 1.055f), .14f);
+    }
+
+    void BuildUnderground()
+    {
+        float bottom = ShipLift.HangarHeight;
+        float height = -bottom;
+        foreach (float x in new[] { -1.115f, 1.115f })
+            foreach (float z in new[] { -1.015f, 1.015f })
+                Box("Underground lift upright", new Vector3(x, bottom/2, z), new Vector3(.065f, height, .065f), graphite);
+        foreach (float x in new[] { -.96f, .96f })
+            Box("Underground guide rail", new Vector3(x, bottom/2, -.94f), new Vector3(.045f, height, .055f), rail);
+        foreach (float z in new[] { -1.002f, 1.002f })
+            Box("Underground Glass panel", new Vector3(0, bottom/2, z), new Vector3(2.14f, height, .018f), glass);
+        Box("Underground Glass right", new Vector3(1.102f, bottom/2, 0), new Vector3(.018f, height, 1.96f), glass);
+        foreach (float z in new[] { -.88f, .88f })
+            Box("Underground Glass side strip", new Vector3(-1.102f, bottom/2, z), new Vector3(.018f, height, .25f), glass);
+        Box("Underground Glass above door", new Vector3(-1.102f, (bottom+2.4f)/2, 0), new Vector3(.018f, height-2.4f, 1.49f), glass);
+        foreach (float z in new[] { -1.015f, 1.015f })
+            Box("Hangar landing crossbeam", new Vector3(0, bottom+.035f, z), new Vector3(2.2f, .075f, .065f), graphite);
+        for (int i = 1; i < 17; i++)
+            Box("Underground guide height mark", new Vector3(1.075f, -.48f*i, .94f), new Vector3(.026f, .018f, .09f), i%3 == 0 ? mint : rail);
     }
 
     public void SetState(int deck, bool moving, bool open)
     {
-        for (int level = 0; level < 2; level++)
+        for (int level = -1; level <= 1; level++)
         {
             bool isOpen = open && !moving && deck == level;
             for (int side = 0; side < 2; side++)
             {
-                var leaf = doorLeaves[level, side];
+                var leaf = doorLeaves[level+1, side];
                 if (leaf == null) continue;
                 float sign = side == 0 ? -1 : 1;
                 // Telescoping leaves park inside the narrow glass side pockets.
-                leaf.localPosition = new Vector3(-1.095f, level*4.1f+1.13f, sign*(isOpen ? .875f : .325f));
+                leaf.localPosition = new Vector3(-1.095f, ShipLift.FloorHeight(level)+1.13f, sign*(isOpen ? .875f : .325f));
                 leaf.localScale = new Vector3(1, 1, isOpen ? .44f : 1);
             }
-            if (levelIndicators[level] != null)
-                levelIndicators[level].sharedMaterial = moving ? amber : deck == level ? mint : dark;
+            if (levelIndicators[level+1] != null)
+                levelIndicators[level+1].sharedMaterial = moving ? amber : deck == level ? mint : dark;
         }
     }
 

@@ -1,0 +1,1 @@
+PASS: hidden initial hangar, unobstructed ground-floor shaft, continuous six-second descent with passenger and owl, reveal during descent, camera transition, craft scale/materials, exit and walkable bounds, terminal excluded, return/home restoration, closed absent landing, empty hangar call, boarding and return.

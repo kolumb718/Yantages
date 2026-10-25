@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
 
-// A two-stop lift owns its platform, passenger and shaft boundaries.
+// Three-stop lift: hangar (-1), living deck (0), cabin (1).
 public sealed class ShipLift : MonoBehaviour
 {
     public const float DeckHeight = 4.1f;
+    public const float HangarHeight = -8.2f;
+    public static float FloorHeight(int deck) => deck < 0 ? HangarHeight : deck * DeckHeight;
     public const float TravelSeconds = 6f;
     const float ClosingSeconds = .4f;
     const float OpeningSeconds = .3f;
@@ -22,6 +24,8 @@ public sealed class ShipLift : MonoBehaviour
     public int CurrentDeck { get; private set; }
     public float Progress => Mathf.Clamp01((elapsed-ClosingSeconds)/TravelSeconds);
     public Transform Platform => visuals.Platform;
+    public GlassLiftVisuals Visuals => visuals;
+    public int DestinationDeck => destination;
     public event Action<int> PassengerArrived;
 
     public void Build(Transform ship, Transform passenger, CourierCharacters presentation)
@@ -36,7 +40,7 @@ public sealed class ShipLift : MonoBehaviour
     public bool IsNear(Vector3 position, int deck)
     {
         var point = position-Centre;
-        return Mathf.Abs(position.y-deck*DeckHeight) < .25f
+        return Mathf.Abs(position.y-FloorHeight(deck)) < .25f
             && Mathf.Abs(point.z) < .90f && point.x > -1.85f && point.x < .95f;
     }
 
@@ -46,8 +50,9 @@ public sealed class ShipLift : MonoBehaviour
         return Mathf.Abs(point.x) <= HalfWidth-Radius && Mathf.Abs(point.z) <= HalfDepth-Radius;
     }
 
-    public bool TryUse(int passengerDeck)
+    public bool TryUse(int passengerDeck, int direction = 1)
     {
+        if (passengerDeck < -1 || passengerDeck > 1) return false;
         if (IsMoving || !IsNear(courier.position, passengerDeck)) return false;
         if (CurrentDeck != passengerDeck)
         {
@@ -55,7 +60,7 @@ public sealed class ShipLift : MonoBehaviour
             return true;
         }
         if (!Inside(courier.position)) return false;
-        Begin(1-passengerDeck, true);
+        Begin(passengerDeck == 0 ? (direction < 0 ? -1 : 1) : 0, true);
         return true;
     }
 
@@ -80,13 +85,13 @@ public sealed class ShipLift : MonoBehaviour
     {
         if (!IsMoving)
         {
-            characters.SetLiftTravel(Inside(courier.position) && Mathf.Abs(courier.position.y-CurrentDeck*DeckHeight) < .25f);
+            characters.SetLiftTravel(Inside(courier.position) && Mathf.Abs(courier.position.y-FloorHeight(CurrentDeck)) < .25f);
             return;
         }
         elapsed += Time.deltaTime;
         float blend = Mathf.SmoothStep(0, 1, Progress);
         var position = Platform.localPosition;
-        position.y = Mathf.Lerp(startHeight, destination*DeckHeight, blend);
+        position.y = Mathf.Lerp(startHeight, FloorHeight(destination), blend);
         Platform.localPosition = position;
         if (elapsed < ClosingSeconds+TravelSeconds+OpeningSeconds) return;
 
@@ -97,7 +102,7 @@ public sealed class ShipLift : MonoBehaviour
         {
             courier.SetParent(originalParent, true);
             var landed = courier.position;
-            landed.y = CurrentDeck*DeckHeight;
+            landed.y = FloorHeight(CurrentDeck);
             courier.position = landed;
             characters.SetLiftTravel(true);
             PassengerArrived?.Invoke(CurrentDeck);
@@ -107,12 +112,12 @@ public sealed class ShipLift : MonoBehaviour
 
     public string Hint(Vector3 position, int deck)
     {
-        if (IsRiding) return destination == 1 ? "ЛИФТ · ПОДЪЁМ" : "ЛИФТ · СПУСК";
+        if (IsRiding) return "ЛИФТ · " + (destination == -1 ? "В АНГАР" : destination == 1 ? "В КАЮТУ" : "В ГОСТИНУЮ");
         if (!IsNear(position, deck)) return "";
         if (IsMoving) return "ЛИФТ · ДВИЖЕТСЯ";
         if (CurrentDeck != deck) return "E · Вызвать лифт";
         if (!Inside(position)) return "Зайдите в лифт через левую дверь";
-        return deck == 0 ? "E · Лифт — в каюту" : "E · Лифт — в гостиную";
+        return deck == 0 ? "E · В каюту     R · В ангар" : "E · В гостиную";
     }
 
     // The prototype uses explicit movement, so glass and closed doors need swept bounds.

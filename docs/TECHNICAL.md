@@ -10,7 +10,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/ | Новая основная версия |
 | unity/Assets/Scripts/CourierShip.cs | Генерация интерьера, движение, лифт, заказ и IMGUI |
 | unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
-| unity/Assets/Scripts/ShipCameraFraming.cs | Подгонка перспективной камеры под корабль и пропорции окна |
+| unity/Assets/Scripts/ShipCameraFraming.cs | Кадрирование дома/ангара, переход по высоте пассажира и видимость этажей |
 | unity/Assets/Scripts/ShipFurnishings.cs | Размещение мебели и растений из prefab |
 | unity/Assets/Scripts/ShipWindowView.cs | Городская сценография и параллакс по положению камеры |
 | unity/Assets/Shaders/WindowCity.shader | Обрезка движущихся слоёв города по оконному проёму |
@@ -18,6 +18,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/ShipWardrobe.cs | Открытый гардероб со скафандром и снаряжением |
 | unity/Assets/Scripts/ShipLift.cs | Движение платформы, пассажир, вызов и ограничения шахты |
 | unity/Assets/Scripts/GlassLiftVisuals.cs | Стеклянная шахта, настил, направляющие, двери и индикаторы |
+| unity/Assets/Scripts/ShipHangar.cs | Подземный ангар и процедурный зелёный корабль |
 | unity/Assets/Shaders/Hologram.shader | Прозрачная сканирующая оболочка планеты |
 | unity/Assets/Art/Furniture/ | FBX, палитры, материалы и prefab мебели/растений |
 | unity/Assets/Editor/FurnitureSetup.cs | Подготовка мебели и привязка в Ship |

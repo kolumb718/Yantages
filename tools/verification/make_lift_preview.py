@@ -1,6 +1,6 @@
 """Package actual Unity lift frames into a GIF using their recorded game times.
 
-Usage: python make_lift_preview.py CAPTURES_DIR OUTPUT.gif
+Usage: python make_lift_preview.py CAPTURES_DIR OUTPUT.gif [TIMESTAMPS.csv]
 Requires Pillow in the development Python environment; does not alter scene content.
 """
 import csv
@@ -10,7 +10,8 @@ from PIL import Image
 
 capture_dir = Path(sys.argv[1]).resolve()
 output = Path(sys.argv[2]).resolve()
-with (capture_dir / 'lift-animation-times.csv').open(encoding='utf-8', newline='') as stream:
+timestamps = sys.argv[3] if len(sys.argv) > 3 else 'lift-animation-times.csv'
+with (capture_dir / timestamps).open(encoding='utf-8', newline='') as stream:
     samples = [(name, float(time)) for name, time in csv.reader(stream) if name]
 if len(samples) < 3:
     raise RuntimeError('Not enough recorded lift frames.')
@@ -21,7 +22,7 @@ for name, _ in samples:
     with Image.open(capture_dir / (name+'.png')) as source:
         frames.append(source.convert('RGB'))
 durations = [max(20, round((b[1]-a[1])*1000)) for a, b in zip(samples, samples[1:])]
-durations.append(1500)  # Hold the open upper landing before the preview loops.
+durations.append(1500)  # Hold the arrival before the preview loops.
 output.parent.mkdir(parents=True, exist_ok=True)
 frames[0].save(output, format='GIF', save_all=True, append_images=frames[1:],
                duration=durations, loop=0, disposal=2, optimize=True)
