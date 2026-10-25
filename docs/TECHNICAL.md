@@ -12,7 +12,8 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/CourierCharacters.cs | Модели персонажей и следование совы |
 | unity/Assets/Scripts/ShipCameraFraming.cs | Подгонка перспективной камеры под корабль и пропорции окна |
 | unity/Assets/Scripts/ShipFurnishings.cs | Размещение мебели и растений из prefab |
-| unity/Assets/Scripts/ShipWindowView.cs | Городская сценография внутри панорамного окна |
+| unity/Assets/Scripts/ShipWindowView.cs | Городская сценография и параллакс по положению камеры |
+| unity/Assets/Shaders/WindowCity.shader | Обрезка движущихся слоёв города по оконному проёму |
 | unity/Assets/Scripts/ShipInteriorDetails.cs | Надписи, кабели и вращающаяся голограмма |
 | unity/Assets/Scripts/ShipWardrobe.cs | Открытый гардероб со скафандром и снаряжением |
 | unity/Assets/Scripts/ShipLift.cs | Движение платформы, пассажир, вызов и ограничения шахты |

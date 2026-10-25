@@ -116,7 +116,7 @@ public static class CharacterIntegrationCheck
         Require(renderers.Length > 0, "Window dressing has no visible geometry.");
         var bounds = renderers[0].bounds;
         foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        Require(bounds.min.x >= 2.6f && bounds.max.x <= 13.4f && bounds.min.y >= 1.1f && bounds.max.y <= 7.9f,
+        Require(bounds.min.x >= 2.0f && bounds.max.x <= 14f && bounds.min.y >= .6f && bounds.max.y <= 8.3f,
             "City geometry escapes the panoramic window.");
         foreach (var name in new[] { "Ship name lettering", "Cabin deck sign", "Bridge sign" })
         {
@@ -151,6 +151,38 @@ public static class CharacterIntegrationCheck
             "Wardrobe oxygen tank", "Wardrobe tool case" }) Find(name);
     }
 
+    static void ValidateWindowParallax()
+    {
+        var view = UnityEngine.Object.FindFirstObjectByType<ShipWindowView>();
+        var camera = Camera.main;
+        var start = camera.transform.position;
+        var near = Find("Foreground docks");
+        var far = Find("Distant skyline");
+        var frame = Find("Panoramic window frame");
+        view.UpdateView(camera);
+        var nearStart = near.localPosition;
+        var farStart = far.localPosition;
+        var frameStart = frame.position;
+        camera.transform.position += new Vector3(2, 1, 0);
+        view.UpdateView(camera);
+        Require(near.localPosition.x > nearStart.x && near.localPosition.y > nearStart.y,
+            "Window layers do not respond to horizontal and vertical camera movement.");
+        Require((far.localPosition - farStart).magnitude > (near.localPosition - nearStart).magnitude * 3,
+            "Window parallax has no depth separation.");
+        Require(frame.position == frameStart, "Window frame moves with scenery.");
+        camera.transform.position = start;
+        view.UpdateView(camera);
+        Require(Vector3.Distance(near.localPosition, nearStart) < .0001f, "Window parallax accumulates drift.");
+        foreach (var renderer in near.GetComponentsInChildren<Renderer>())
+            foreach (var material in renderer.sharedMaterials)
+                Require(material.shader.name == "Orbita/WindowCity" && material.shader.isSupported,
+                    "Window aperture clipping shader is unavailable.");
+        for (int i = 0; i < 21; i++) Capture("parallax-" + i.ToString("D3"), false);
+        view.UpdateView(camera);
+        File.WriteAllText("Captures/parallax-check.txt",
+            "PASS: horizontal/vertical camera response, distant scenery compensates eye movement more than foreground, fixed frame, return without drift, supported aperture shader. 21 actual Unity frames.\n");
+    }
+
     static void Capture(string name, bool close)
     {
         var camera = Camera.main;
@@ -161,11 +193,19 @@ public static class CharacterIntegrationCheck
         var previousTarget = camera.targetTexture;
         var previousActive = RenderTexture.active;
         bool animationFrame = name.StartsWith("lift-frame-");
-        int width = animationFrame ? 800 : 1600, height = animationFrame ? 800 : 1000;
+        bool parallax = name.StartsWith("parallax-");
+        int width = animationFrame || parallax ? 800 : 1600, height = animationFrame ? 800 : parallax ? 500 : 1000;
         var target = new RenderTexture(width, height, 24);
         var image = new Texture2D(width, height, TextureFormat.RGB24, false);
         try
         {
+            if (parallax)
+            {
+                float phase = int.Parse(name.Substring(9)) * Mathf.PI * 2 / 20;
+                camera.transform.position = new Vector3(8 + Mathf.Sin(phase) * 1.3f, 4.5f + Mathf.Sin(phase) * .45f, 7);
+                camera.transform.rotation = Quaternion.Euler(0, 180, 0);
+                camera.fieldOfView = 38;
+            }
             if (close)
             {
                 var courier = Find("Courier");
@@ -211,9 +251,10 @@ public static class CharacterIntegrationCheck
             }
             camera.targetTexture = target;
             camera.aspect = (float)width / height;
-            if (!close && !name.StartsWith("furniture-") && !name.StartsWith("details-")
+            if (!parallax && !close && !name.StartsWith("furniture-") && !name.StartsWith("details-")
                 && (!name.StartsWith("lift-") || name == "lift-overview"))
                 UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().Reframe();
+            UnityEngine.Object.FindFirstObjectByType<ShipWindowView>().UpdateView(camera);
             camera.Render();
             RenderTexture.active = target;
             image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
@@ -230,6 +271,7 @@ public static class CharacterIntegrationCheck
             camera.transform.SetPositionAndRotation(position, rotation);
             camera.fieldOfView = fov;
             camera.aspect = aspect;
+            UnityEngine.Object.FindFirstObjectByType<ShipWindowView>().UpdateView(camera);
             target.Release();
             UnityEngine.Object.DestroyImmediate(target);
             UnityEngine.Object.DestroyImmediate(image);
@@ -268,6 +310,7 @@ public static class CharacterIntegrationCheck
                 Capture("furniture-bedroom", false);
                 Capture("furniture-lounge", false);
                 Capture("details-window", false);
+                ValidateWindowParallax();
                 Capture("details-hologram", false);
                 Capture("details-wardrobe", false);
                 SessionState.SetFloat("Orbita.CharacterCheck.PlanetYaw", Find("Holographic planet").localEulerAngles.y);

@@ -5,6 +5,29 @@ using UnityEngine;
 public sealed class ShipWindowView : MonoBehaviour
 {
     bool built;
+    readonly List<Transform> layers = new List<Transform>();
+    readonly float[] depthWeights = { .16f, .075f, .025f, .075f, .04f };
+    Vector3 referenceCamera;
+    bool hasReference;
+
+    // Absolute camera offsets in ship space avoid drift on a return trip.
+    public void UpdateView(Camera camera)
+    {
+        if (!built || camera == null) return;
+        Vector3 position = windowRoot.InverseTransformPoint(camera.transform.position);
+        if (!hasReference) { referenceCamera = position; hasReference = true; }
+        Vector3 delta = position - referenceCamera;
+        // Soft limits stay responsive even when inspecting the window from close up.
+        delta = new Vector3(delta.x / Mathf.Sqrt(1 + delta.x * delta.x / 25),
+            delta.y / Mathf.Sqrt(1 + delta.y * delta.y / 6.25f), 0);
+        // Far scenery follows the eye more, so it travels less on screen than nearby docks.
+        for (int i = 0; i < layers.Count; i++) layers[i].localPosition = delta * depthWeights[i];
+        foreach (var material in materials)
+            if (material.shader.name == "Orbita/WindowCity")
+                material.SetMatrix("_WorldToWindow", windowRoot.worldToLocalMatrix);
+    }
+
+    void LateUpdate() { UpdateView(Camera.main); }
     readonly List<Material> materials = new List<Material>();
     Transform windowRoot;
     Texture2D skyTexture;
@@ -94,11 +117,11 @@ public sealed class ShipWindowView : MonoBehaviour
         frame.Box(new Vector3(6.45f, 4.5f, -4.205f), new Vector3(.055f, 5.8f, .075f), frameMaterial);
         frame.Box(new Vector3(10.20f, 4.5f, -4.205f), new Vector3(.055f, 5.8f, .075f), frameMaterial);
 
-        distant.Create("Distant skyline", root, materials);
-        city.Create("Midcity skyline", root, materials);
-        docks.Create("Foreground docks", root, materials);
-        landmark.Create("Stepped skyline landmark", root, materials);
-        details.Create("City antennas and traffic lights", root, materials);
+        layers.Add(distant.Create("Distant skyline", root, materials));
+        layers.Add(city.Create("Midcity skyline", root, materials));
+        layers.Add(docks.Create("Foreground docks", root, materials));
+        layers.Add(landmark.Create("Stepped skyline landmark", root, materials));
+        layers.Add(details.Create("City antennas and traffic lights", root, materials));
         frame.Create("Panoramic window frame", root, materials);
     }
 
@@ -106,8 +129,8 @@ public sealed class ShipWindowView : MonoBehaviour
     {
         Color color;
         ColorUtility.TryParseHtmlString("#" + hex, out color);
-        var shader = Shader.Find("Unlit/Color");
-        if (shader == null) throw new MissingReferenceException("Built-in Unlit/Color shader is unavailable.");
+        var shader = Shader.Find(name == "Window frame" ? "Unlit/Color" : "Orbita/WindowCity");
+        if (shader == null) throw new MissingReferenceException("Window material shader is unavailable: " + name);
         var material = new Material(shader) { name = name, color = color };
         materials.Add(material);
         return materials.Count - 1;
@@ -167,6 +190,9 @@ public sealed class ShipWindowView : MonoBehaviour
     static void Building(Geometry geometry, float x, float bottom, float height, float width, float z,
         int body, int roof, int amber, int mint, int darkWindow, System.Random random, bool antennas)
     {
+        // Hidden overscan keeps the base of a vertically shifted skyline below the sill.
+        bottom -= .45f;
+        height += .45f;
         geometry.Box(new Vector3(x, bottom + height * .5f, z), new Vector3(width, height, .065f), body);
         geometry.Box(new Vector3(x, bottom + height, z + .008f), new Vector3(width * 1.05f, .045f, .08f), roof);
         if (random.Next(3) == 0)
@@ -220,7 +246,7 @@ public sealed class ShipWindowView : MonoBehaviour
             Face(new Vector3(p.x, p.y, p.z), new Vector3(p.x, p.y, q.z), new Vector3(q.x, p.y, q.z), new Vector3(q.x, p.y, p.z), material);
         }
 
-        public void Create(string name, Transform root, List<Material> materials)
+        public Transform Create(string name, Transform root, List<Material> materials)
         {
             var mesh = new Mesh { name = name };
             mesh.SetVertices(vertices);
@@ -235,6 +261,7 @@ public sealed class ShipWindowView : MonoBehaviour
             var slots = new Material[triangles.Length];
             for (int i = 0; i < slots.Length; i++) slots[i] = materials[i];
             obj.GetComponent<MeshRenderer>().sharedMaterials = slots;
+            return obj.transform;
         }
     }
 }
