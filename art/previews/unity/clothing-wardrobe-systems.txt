@@ -1,0 +1,29 @@
+build safety: custom shaders in Resources, Standard pinned, no built-in unlit materials
+input: keyboard E, gamepad stick (1.00, 0.00), gamepad interact label A
+Terracotta sofa measured metres (2.20, 0.85, 0.95)
+Cabin bed measured metres (2.15, 1.05, 1.60)
+Wood bookshelf measured metres (1.15, 2.00, 0.40)
+scale and orbit: five-metre floor-level window, furniture XYZ, terminal, EVA suit, orbit controls, wall clearance PASS
+follow start: camera (-4.00, 2.33, 3.93) courier screen (0.00, -0.07)
+dead zone drift 3,0051
+walk to bridge: courier x 4,81 pan -8,81 screen (0.00, -0.07)
+walk into coffee table stops at x -8,25
+walk into wardrobe stops at z 2,61
+overview error 0,0000
+door leaf while departing 0,412
+cabin arrival screen (0.00, -0.07)
+walk frame 0: speed param 2,40, playback 1,00
+walk frame 1: speed param 2,40, playback 1,00
+walk frame 2: speed param 2,40, playback 1,00
+walk frame 3: speed param 2,40, playback 1,00
+walk frame 4: speed param 2,40, playback 1,00
+walk frame 5: speed param 2,40, playback 1,00
+run frame 0: speed param 4,40, playback 1,22
+run frame 1: speed param 4,40, playback 1,22
+run frame 2: speed param 4,40, playback 1,22
+run frame 3: speed param 4,40, playback 1,22
+run frame 4: speed param 4,40, playback 1,22
+run frame 5: speed param 4,40, playback 1,22
+owl sent to nest: ToNest
+owl resting at (3.25, 1.32, -3.65) perch (3.25, 1.32, -3.65)
+ORBITA_SHIP_SYSTEMS_PASS

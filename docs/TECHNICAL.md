@@ -16,6 +16,9 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Третье лицо: орбита, дистанция, приближение у препятствий; C — общий план; видимость этажей и параллакс |
 | unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, клетка совы OwlAviary, размещение мебели из prefab |
 | unity/Assets/Scripts/Characters/ | CourierCharacters — создание персонажей и скорость анимации Кристи; OwlCompanion — полёты, клетка, лифт |
+| unity/Assets/Scripts/Characters/CourierOutfits.cs | Цветовые варианты существующей одежды, рюкзак на риге, примерка/отмена/подтверждение и PlayerPrefs косметики |
+| unity/Assets/Scripts/Scenery/CabinWardrobe.cs | Личный гардероб на второй палубе, оформление через SceneKit |
+| unity/Assets/Editor/WardrobeIntegrationCheck.cs | Batch-проверка смены одежды через реальный игровой ввод; сохраняет прежний PlayerPrefs |
 | unity/Assets/Editor/AnimatedCharacterSetup.cs, GaitClips.cs | Импорт риг-моделей, humanoid-аватар, генерация ходьбы и бега, контроллеры и prefab |
 | unity/Assets/Scripts/UI/ShipHud.cs | IMGUI-интерфейс с масштабированием под экран и подписями клавиш устройства |
 | unity/Assets/Resources/Shaders/ | WindowCity, Hologram, OrbitaUnlit и StandardReference.mat — включаются в сборку через Resources |

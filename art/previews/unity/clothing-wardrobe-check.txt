@@ -1,0 +1,1 @@
+WARDROBE_CHECK_PASS: cabin approach; real E/D/W/Escape/LeftArrow; preview; cancel; confirm; persistence; movement lock/release; unchanged animator and skin.

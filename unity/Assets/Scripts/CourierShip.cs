@@ -27,10 +27,13 @@ public sealed class CourierShip : MonoBehaviour
     public CourierMotor Motor { get; private set; }
     public ShipLift Lift { get; private set; }
     public OrderTerminal Terminal { get; } = new OrderTerminal();
+    public CourierOutfits Outfits { get; private set; }
     public CourierInput Controls => input;
     public int Deck => Motor.Deck;
     public bool Ready => Motor != null;
     public bool AtTerminal => Ready && OrderTerminal.InReach(Motor.Courier.position, Deck);
+    public bool AtWardrobe => Ready && Deck == ShipLayout.CabinDeck
+        && Vector3.Distance(Motor.Courier.position, ShipLayout.ClothingWardrobeApproach) <= ShipLayout.ClothingWardrobeReach;
     public bool AtLift => Ready && Lift.IsNear(Motor.Courier.position, Deck);
     public LiftPrompt LiftPrompt => Ready ? Lift.Prompt(Motor.Courier.position, Deck) : LiftPrompt.None;
 
@@ -43,6 +46,8 @@ public sealed class CourierShip : MonoBehaviour
         GetComponent<ShipFurnishings>().Build();
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
         gameObject.AddComponent<ShipWardrobe>().Build(transform);
+        var wardrobe = gameObject.AddComponent<CabinWardrobe>();
+        wardrobe.Build(transform);
         var aviary = gameObject.AddComponent<OwlAviary>();
         aviary.Build(transform);
         // Everything built so far is the home; the camera hides it as a cutaway below deck.
@@ -52,9 +57,12 @@ public sealed class CourierShip : MonoBehaviour
         var characters = GetComponent<CourierCharacters>();
         var courier = characters.CreateCourier(ShipLayout.CourierStart);
         courier.rotation = Quaternion.Euler(0,180,0);
+        Outfits = courier.gameObject.AddComponent<CourierOutfits>();
+        Outfits.Initialize(courier);
         Lift = gameObject.AddComponent<ShipLift>();
         Lift.Build(transform, courier, characters);
         Motor = new CourierMotor(courier, Lift);
+        Motor.AddObstacle(wardrobe.Root, .02f);
         foreach (var obstacle in interior.Obstacles) Motor.AddObstacle(obstacle, .02f);
         Motor.AddObstacle(aviary.Root, .05f);
         foreach (var (name, inset) in PropObstacles)
@@ -100,6 +108,13 @@ public sealed class CourierShip : MonoBehaviour
         if (!Ready) return;
         interior.SetTerminalHighlight(AtTerminal && !Terminal.IsOpen);
         Motor.Turn(Time.deltaTime);
+        if (Outfits.IsOpen)
+        {
+            Outfits.Navigate(input.Move.x);
+            if (input.Pressed(CourierAction.Cancel)) Outfits.Close();
+            else if (input.Pressed(CourierAction.Interact)) Outfits.Confirm();
+            return;
+        }
         if (input.Pressed(CourierAction.Camera)) framing.Follow = !framing.Follow;
         framing.ApplyLook(input.LookDelta(Time.deltaTime),input.ZoomDelta);
         if (Terminal.IsOpen)
@@ -127,13 +142,15 @@ public sealed class CourierShip : MonoBehaviour
     public void Interact()
     {
         if (Lift.IsRiding) return;
-        if (AtLift) Lift.TryUse(Deck);
+        if (Outfits.IsOpen) return;
+        if (AtWardrobe) Outfits.Open();
+        else if (AtLift) Lift.TryUse(Deck);
         else if (AtTerminal) Terminal.Open();
     }
 
     public void Descend()
     {
-        if (!Terminal.IsOpen && AtLift) Lift.TryUse(Deck, -1);
+        if (!Terminal.IsOpen && !Outfits.IsOpen && AtLift) Lift.TryUse(Deck, -1);
     }
 
     public void AcceptOrClose()

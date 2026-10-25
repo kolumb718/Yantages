@@ -29,7 +29,8 @@ public sealed class ShipHud : MonoBehaviour
         DrawHeader();
         if (ship.Terminal.Accepted) DrawActiveOrder(width);
         DrawControls(height);
-        if (ship.Terminal.IsOpen) DrawOrderCard(width, height);
+        if (ship.Outfits.IsOpen) DrawWardrobeCard(width, height);
+        else if (ship.Terminal.IsOpen) DrawOrderCard(width, height);
         else DrawPrompt(width, height);
         GUI.matrix = previous;
     }
@@ -99,7 +100,8 @@ public sealed class ShipHud : MonoBehaviour
             LiftPrompt.LoungeChoices => new[] { (interact, "В каюту"), (descend, "В ангар") },
             LiftPrompt.CabinChoices => new[] { (interact, "В гостиную"), (descend, "В ангар") },
             LiftPrompt.ToLounge => new[] { (interact, "В гостиную") },
-            _ => ship.AtTerminal ? new[] { (interact, "Открыть заказ") } : null,
+            _ => ship.AtWardrobe ? new[] { (interact, "Гардероб · сменить одежду") }
+                : ship.AtTerminal ? new[] { (interact, "Открыть заказ") } : null,
         };
         if (parts == null) return;
         float total = 0;
@@ -149,6 +151,33 @@ public sealed class ShipHud : MonoBehaviour
     {
         GUI.Label(new Rect(x, y, 150, 28), label, small);
         GUI.Label(new Rect(x + 150, y - 2, width - 150, 30), value, body);
+    }
+
+    void DrawWardrobeCard(float width, float height)
+    {
+        var outfits = ship.Outfits;
+        var area = new Rect(width - 648, (height - 510) * .5f, 620, 510);
+        GUI.Box(area, GUIContent.none, card);
+        float x = area.x + 30, y = area.y + 24, w = area.width - 60;
+        GUI.Label(new Rect(x,y,w,24), "КАЮТА · ЛИЧНЫЙ ГАРДЕРОБ", eyebrow);
+        GUI.Label(new Rect(x,y+28,w,42), "Одежда Кристи", title);
+        GUI.Label(new Rect(x,y+75,w,28), "A / D, стрелки или L-стик — примерить", small);
+        for (int i = 0; i < CourierOutfits.Names.Length; i++)
+        {
+            var row = new Rect(x,y+114+i*76,w,66);
+            if (GUI.Button(row, GUIContent.none, button)) outfits.Preview(i);
+            var previous = GUI.color;
+            GUI.color = CourierOutfits.Swatches[i];
+            GUI.DrawTexture(new Rect(row.x+14,row.y+14,32,36),Texture2D.whiteTexture);
+            GUI.color = previous;
+            string mark = i == outfits.Selected ? "● " : "○ ";
+            GUI.Label(new Rect(row.x+60,row.y+8,w-72,28),mark+CourierOutfits.Names[i],body);
+            GUI.Label(new Rect(row.x+60,row.y+36,w-72,24),
+                i == outfits.Equipped ? "Надето сейчас" : "Примерить комплект",small);
+        }
+        GUI.Label(new Rect(x,y+350,w,55),CourierOutfits.Descriptions[outfits.Selected],small);
+        if (ActionButton(new Rect(x,area.yMax-72,260,46),Key(CourierAction.Interact),"Надеть")) outfits.Confirm();
+        if (ActionButton(new Rect(area.xMax-240,area.yMax-72,210,46),Key(CourierAction.Cancel),"Отмена")) outfits.Close();
     }
 
     bool ActionButton(Rect area, string badge, string text)

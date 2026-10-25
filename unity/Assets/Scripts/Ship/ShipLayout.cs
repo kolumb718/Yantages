@@ -31,6 +31,12 @@ public static class ShipLayout
     public static readonly Vector3 LiftCentre = new Vector3(.3f, 0, 1.8f);
     public static readonly Vector3 TerminalPosition = new Vector3(.4f, 0, -.6f);
     public const float TerminalReach = 1.35f;
+    public static readonly Vector3 ClothingWardrobePosition = new Vector3(-3.3f, DeckHeight, -3.9f);
+    public static readonly Vector3 ClothingWardrobeSize = new Vector3(1.65f, 2.2f, .62f);
+    public static readonly Vector3 ClothingWardrobeApproach = new Vector3(-3.3f, DeckHeight, -2.65f);
+    public const float ClothingWardrobeReach = 1.45f;
+    public static readonly Vector3 CourierBagPosition = new Vector3(0, 1.24f, -.19f);
+    public static readonly Vector3 CourierBagSize = new Vector3(.32f, .36f, .13f);
 
     public static float FloorHeight(int deck) => deck < 0 ? HangarHeight : deck * DeckHeight;
 
