@@ -14,6 +14,11 @@ public sealed class CourierShip : MonoBehaviour
         ("Pothos reading nook", .1f), ("Equipment wardrobe", .05f),
     };
 
+    static readonly System.Collections.Generic.HashSet<string> HangarObstacles = new System.Collections.Generic.HashSet<string>
+    {
+        "Hangar fuel station", "Hangar fuel canister", "Hangar cargo crate", "Hangar structural column",
+    };
+
     CourierInput input;
     ShipInterior interior;
     ShipCameraFraming framing;
@@ -38,6 +43,8 @@ public sealed class CourierShip : MonoBehaviour
         GetComponent<ShipFurnishings>().Build();
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
         gameObject.AddComponent<ShipWardrobe>().Build(transform);
+        var aviary = gameObject.AddComponent<OwlAviary>();
+        aviary.Build(transform);
         // Everything built so far is the home; the camera hides it as a cutaway below deck.
         var homeGroups = new GameObject[transform.childCount];
         for (int i = 0; i < homeGroups.Length; i++) homeGroups[i] = transform.GetChild(i).gameObject;
@@ -48,6 +55,7 @@ public sealed class CourierShip : MonoBehaviour
         Lift.Build(transform, courier, characters);
         Motor = new CourierMotor(courier, Lift);
         foreach (var obstacle in interior.Obstacles) Motor.AddObstacle(obstacle, .02f);
+        Motor.AddObstacle(aviary.Root, .05f);
         foreach (var (name, inset) in PropObstacles)
         {
             var prop = transform.Find("Cabin furnishings/" + name);
@@ -55,11 +63,16 @@ public sealed class CourierShip : MonoBehaviour
             if (prop != null) Motor.AddObstacle(prop, inset);
         }
         Lift.PassengerArrived += deck => Motor.Deck = deck;
+        characters.Owl.UseAviary(aviary);
 
         framing = gameObject.AddComponent<ShipCameraFraming>();
         framing.Initialize(view, transform);
         var hangar = gameObject.AddComponent<ShipHangar>();
         hangar.Build(transform);
+        // Registered while the hangar is still active: hidden renderers report empty bounds.
+        Motor.AddObstacle(hangar.Craft, .1f);
+        foreach (Transform part in hangar.Interior)
+            if (HangarObstacles.Contains(part.name)) Motor.AddObstacle(part, .02f);
         framing.ConfigureHangar(hangar.Interior, courier, homeGroups, Lift.Visuals);
 
         input = new CourierInput();

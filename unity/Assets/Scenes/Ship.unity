@@ -177,8 +177,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f17f25083e2c07d4880479d2eac5dfcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CourierCharacters
-  courierPrefab: {fileID: 7881090605806078637, guid: 8fecf51c09b87ed498bdd6bc4d14c485, type: 3}
-  owlPrefab: {fileID: 797305381988782384, guid: d901911e908257648bddde25ef33214a, type: 3}
+  courierPrefab: {fileID: 8007796390884853715, guid: 512f0b5cbb54f1442a2281b1c771dc1f, type: 3}
+  owlPrefab: {fileID: 7459974921138186095, guid: 7bc2bf6ba34c0fa42b1a2a5835d30db1, type: 3}
 --- !u!114 &1115013407
 MonoBehaviour:
   m_ObjectHideFlags: 0

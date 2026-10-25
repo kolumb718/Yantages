@@ -4,7 +4,8 @@ using UnityEngine;
 // Walking on the current deck: floor rectangle, furniture footprints and the lift's glass.
 public sealed class CourierMotor
 {
-    public const float WalkSpeed = 4, SprintSpeed = 6;
+    // Brisk walk and jog; the locomotion clips are tuned to these paces.
+    public const float WalkSpeed = 2.4f, SprintSpeed = 4.4f;
     public const float Radius = .22f;
     const float TurnDegreesPerSecond = 720;
 

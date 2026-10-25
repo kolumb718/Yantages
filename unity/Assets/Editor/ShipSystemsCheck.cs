@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.LowLevel;
 
 // Batch-only check of the systems around the courier: camera window, input bindings,
 // furniture footprints, animated lift doors and build-safe shaders. Writes Captures/ship-systems-*.
@@ -68,6 +70,50 @@ public static class ShipSystemsCheck
         camera.targetTexture = previous;
         UnityEngine.Object.DestroyImmediate(image);
         UnityEngine.Object.DestroyImmediate(target);
+    }
+
+    // A close-up from a temporary pose; the game camera is restored afterwards.
+    static void CaptureFrom(string name, Vector3 position, Vector3 target)
+    {
+        var camera = Camera.main.transform;
+        var pose = (camera.position, camera.rotation);
+        camera.position = position;
+        camera.LookAt(target);
+        Capture(name);
+        camera.SetPositionAndRotation(pose.position, pose.rotation);
+    }
+
+    static CourierShip walkingShip;
+    static float walkingSpeed;
+    static bool walkerInstalled;
+
+    // Steps the courier every game frame from the player loop, the way input would; editor ticks
+    // are not game frames, so stepping from Tick would under-report the speed to the animator.
+    static void Walk(CourierShip ship, float speed)
+    {
+        if (!walkerInstalled && ship != null)
+        {
+            walkerInstalled = true;
+            var loop = PlayerLoop.GetCurrentPlayerLoop();
+            for (int i = 0; i < loop.subSystemList.Length; i++)
+                if (loop.subSystemList[i].type == typeof(UnityEngine.PlayerLoop.Update))
+                {
+                    var systems = new List<PlayerLoopSystem>(loop.subSystemList[i].subSystemList)
+                    {
+                        new PlayerLoopSystem { type = typeof(ShipSystemsCheck), updateDelegate = WalkFrame },
+                    };
+                    loop.subSystemList[i].subSystemList = systems.ToArray();
+                }
+            PlayerLoop.SetPlayerLoop(loop);
+        }
+        walkingShip = ship;
+        walkingSpeed = speed;
+    }
+
+    static void WalkFrame()
+    {
+        if (walkingShip != null && walkingShip.Ready && walkingSpeed > 0)
+            walkingShip.Motor.Move(Vector3.right, walkingSpeed * Time.deltaTime);
     }
 
     static void Wait(double seconds, int next)
@@ -153,6 +199,65 @@ public static class ShipSystemsCheck
                 Log("cabin arrival screen " + screen);
                 Require(Mathf.Abs(screen.x) < .6f && Mathf.Abs(screen.y) < .6f, "Camera lost the courier after the lift ride.");
                 Capture("ship-systems-cabin");
+                // Back on the living deck for the locomotion close-ups.
+                courier.position = new Vector3(-9, 0, 2.2f);
+                ship.Motor.Deck = ShipLayout.LivingDeck;
+                SessionState.SetFloat("Orbita.ShipSystems.Clock", 0);
+                SessionState.SetInt(StageKey, 8);
+            }
+            else if (stage == 8 || stage == 9)
+            {
+                bool running = stage == 9;
+                float clock = SessionState.GetFloat("Orbita.ShipSystems.Clock", 0) + Time.deltaTime;
+                SessionState.SetFloat("Orbita.ShipSystems.Clock", clock);
+                Walk(ship, running ? CourierMotor.SprintSpeed : CourierMotor.WalkSpeed);
+                var animator = courier.GetComponentInChildren<Animator>();
+                int shot = SessionState.GetInt("Orbita.ShipSystems.Shot", 0);
+                // Frames spread over one cycle after the blend has settled.
+                if (clock > .8f + shot * .17f && shot < 6)
+                {
+                    float blend = animator.GetFloat("Speed");
+                    Log((running ? "run" : "walk") + " frame " + shot + ": speed param " + blend.ToString("F2")
+                        + ", playback " + animator.speed.ToString("F2"));
+                    CaptureFrom((running ? "kristi-run-" : "kristi-walk-") + shot, courier.position + new Vector3(.4f, 1.2f, 3.6f),
+                        courier.position + Vector3.up * .9f);
+                    SessionState.SetInt("Orbita.ShipSystems.Shot", shot + 1);
+                }
+                if (shot < 6) return;
+                Require(animator.GetFloat("Speed") > (running ? 3.6f : 2), "Locomotion speed does not reach the animator.");
+                Walk(null, 0);
+                SessionState.SetInt("Orbita.ShipSystems.Shot", 0);
+                SessionState.SetFloat("Orbita.ShipSystems.Clock", 0);
+                if (!running) { courier.position = new Vector3(-12, 0, 3.6f); SessionState.SetInt(StageKey, 9); return; }
+                var owl = UnityEngine.Object.FindFirstObjectByType<OwlCompanion>();
+                owl.SendToNest();
+                Log("owl sent to nest: " + owl.Activity);
+                Wait(1.5, 10);
+            }
+            else if (stage == 10)
+            {
+                var owl = UnityEngine.Object.FindFirstObjectByType<OwlCompanion>();
+                if (!SessionState.GetBool("Orbita.ShipSystems.OwlFlight", false))
+                {
+                    CaptureFrom("owl-flight", owl.transform.position + new Vector3(1.6f, .5f, 3.2f), owl.transform.position);
+                    SessionState.SetBool("Orbita.ShipSystems.OwlFlight", true);
+                }
+                if (!owl.Resting)
+                {
+                    Require(EditorApplication.timeSinceStartup - waitUntil < 40, "Owl never reached the aviary: " + owl.Activity);
+                    return;
+                }
+                var aviary = UnityEngine.Object.FindFirstObjectByType<OwlAviary>();
+                Wait(2, 11);
+            }
+            else if (stage == 11)
+            {
+                var aviary = UnityEngine.Object.FindFirstObjectByType<OwlAviary>();
+                var owl = UnityEngine.Object.FindFirstObjectByType<OwlCompanion>();
+                Log("owl resting at " + owl.transform.position + " perch " + aviary.Perch);
+                Require(owl.Resting && Vector3.Distance(owl.transform.position, aviary.Perch) < .02f, "Owl rests off the perch.");
+                CaptureFrom("owl-aviary", aviary.Perch + new Vector3(.6f, .6f, 3.4f), aviary.Perch + Vector3.down * .3f);
+                CaptureFrom("owl-aviary-wide", aviary.Perch + new Vector3(2.5f, 1.4f, 6.5f), aviary.Perch + Vector3.down * .4f);
                 Finish(0);
             }
         }

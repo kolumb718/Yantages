@@ -1,21 +1,22 @@
 using UnityEngine;
 
 // Presentation of the imported characters; movement and interactions stay in CourierShip.
+// Drives Kristi's locomotion blend from her actual speed and hands the owl to OwlCompanion.
 public sealed class CourierCharacters : MonoBehaviour
 {
     public const string DisplayName = "Кристи";
+    // Ground speed at which each generated cycle's feet do not slide (blend-tree thresholds, m/s).
+    public const float WalkCycleSpeed = 1.5f, RunCycleSpeed = 3.6f;
+    static readonly int SpeedId = Animator.StringToHash("Speed");
+
     [SerializeField] GameObject courierPrefab;
     [SerializeField] GameObject owlPrefab;
 
     Transform courier;
-    Transform owl;
+    Animator courierAnimator;
     Vector3 previousPosition;
-    bool liftTravel;
 
-    public void SetLiftTravel(bool active)
-    {
-        liftTravel = active;
-    }
+    public OwlCompanion Owl { get; private set; }
 
     public Transform CreateCourier(Vector3 position)
     {
@@ -26,53 +27,34 @@ public sealed class CourierCharacters : MonoBehaviour
         courier.SetParent(transform, false);
         courier.position = position;
         var visual = Instantiate(courierPrefab, courier, false);
-        visual.name = "Courier girl";
+        visual.name = "Kristi";
+        courierAnimator = visual.GetComponentInChildren<Animator>();
+        previousPosition = position;
 
-        owl = Instantiate(owlPrefab, transform, false).transform;
+        var owl = Instantiate(owlPrefab, transform, false);
         owl.name = "Space owl companion";
-        SnapCompanion();
+        Owl = owl.AddComponent<OwlCompanion>();
+        Owl.Begin(courier);
         return courier;
     }
 
-    Vector3 CompanionPosition()
+    // ShipLift reports when the courier stands in the glass cabin; the owl joins her there.
+    public void SetLiftTravel(bool active)
     {
-        return courier.position - courier.forward * .65f + Vector3.right * .75f
-            + Vector3.up * (1.05f + Mathf.Sin(Time.time * 2.2f) * .045f);
-    }
-
-    public void SnapCompanion()
-    {
-        if (courier == null || owl == null) return;
-        if (liftTravel)
-        {
-            // Stay inside the glass cabin, moving at exactly the passenger's speed.
-            owl.position = courier.position + new Vector3(.45f, 1.05f, -.20f);
-            owl.rotation = courier.rotation;
-            previousPosition = courier.position;
-            return;
-        }
-        owl.position = CompanionPosition();
-        owl.rotation = courier.rotation;
-        previousPosition = courier.position;
+        if (Owl != null) Owl.CabinTravel = active;
     }
 
     void LateUpdate()
     {
-        if (courier == null || owl == null) return;
-        if (liftTravel)
-        {
-            SnapCompanion();
-            return;
-        }
-        // Deck changes must not make the owl fly through the intervening floor.
-        if (Mathf.Abs(courier.position.y - previousPosition.y) > 1)
-            SnapCompanion();
-        else
-        {
-            float blend = 1 - Mathf.Exp(-5 * Time.deltaTime);
-            owl.position = Vector3.Lerp(owl.position, CompanionPosition(), blend);
-            owl.rotation = Quaternion.Slerp(owl.rotation, courier.rotation, blend);
-        }
+        if (courier == null || courierAnimator == null || Time.deltaTime <= 0) return;
+        var step = courier.position - previousPosition;
         previousPosition = courier.position;
+        step.y = 0;
+        float speed = step.magnitude / Time.deltaTime;
+        // A teleport (respawn, test placement) is not a stride.
+        if (speed > 12) speed = 0;
+        courierAnimator.SetFloat(SpeedId, speed, .1f, Time.deltaTime);
+        // Above the run cycle's natural pace, play it faster instead of letting feet slide.
+        courierAnimator.speed = Mathf.Max(1, speed / RunCycleSpeed);
     }
 }

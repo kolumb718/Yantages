@@ -16,9 +16,10 @@ public static class ShipLayout
     public static int DeckAt(float height) =>
         height < HangarHeight * .5f ? HangarDeck : height > DeckHeight * .5f ? CabinDeck : LivingDeck;
 
-    // Walkable floor as (x, z) per deck; the hangar promenade stays clear of the parked craft.
+    // Walkable floor as (x, z) per deck: the whole visible floor inside the hull walls. Furniture,
+    // the parked craft and the lift shaft block movement as obstacles, not as invisible limits.
     public static Rect WalkArea(int deck) =>
-        deck < 0 ? Rect.MinMaxRect(-17.2f, 1, 17.2f, 5.4f)
-        : deck == CabinDeck ? Rect.MinMaxRect(-13.2f, -.8f, 1, 2.5f)
-        : Rect.MinMaxRect(-13.2f, -.8f, 13.2f, 4.4f);
+        deck < 0 ? Rect.MinMaxRect(-17.2f, -7.2f, 17.2f, 5.4f)
+        : deck == CabinDeck ? Rect.MinMaxRect(-13.2f, -4.4f, 1.55f, 2.75f)
+        : Rect.MinMaxRect(-13.2f, -4.55f, 13.2f, 4.4f);
 }

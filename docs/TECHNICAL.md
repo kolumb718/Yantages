@@ -14,8 +14,9 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/Ship/ | ShipLayout — все размеры корабля; CourierMotor и FloorSweep — ходьба, границы и мебель-препятствия; OrderTerminal — заказ; ShipInterior — корпус, встроенная мебель и свет |
 | unity/Assets/Scripts/Ship/Lift/ | ShipLift — поездка, пассажир, плавные двери, стены шахты; GlassLiftVisuals — стеклянная шахта и индикаторы |
 | unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Кадрирование дома/ангара, camera-window слежение (C — обзор), видимость этажей, вызов параллакса окна |
-| unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, размещение мебели из prefab |
-| unity/Assets/Scripts/Characters/CourierCharacters.cs | Модели персонажей и следование совы |
+| unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, клетка совы OwlAviary, размещение мебели из prefab |
+| unity/Assets/Scripts/Characters/ | CourierCharacters — создание персонажей и скорость анимации Кристи; OwlCompanion — полёты, клетка, лифт |
+| unity/Assets/Editor/AnimatedCharacterSetup.cs, GaitClips.cs | Импорт риг-моделей, humanoid-аватар, генерация ходьбы и бега, контроллеры и prefab |
 | unity/Assets/Scripts/UI/ShipHud.cs | IMGUI-интерфейс с масштабированием под экран и подписями клавиш устройства |
 | unity/Assets/Resources/Shaders/ | WindowCity, Hologram, OrbitaUnlit и StandardReference.mat — включаются в сборку через Resources |
 | unity/Assets/Art/Furniture/ | FBX, палитры, материалы и prefab мебели/растений |
@@ -23,7 +24,7 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Art/Characters/ | FBX, палитры, материалы и prefab героини/совы |
 | unity/Assets/Editor/CharacterSetup.cs | Подготовка персонажей и привязка в Ship |
 | unity/Assets/Editor/CharacterIntegrationCheck.cs | Batch-проверка Play Mode, лифта, ангара и рендеров |
-| unity/Assets/Editor/ShipSystemsCheck.cs | Batch-проверка камеры, ввода (клавиатура и виртуальный геймпад), препятствий, дверей лифта и шейдеров сборки |
+| unity/Assets/Editor/ShipSystemsCheck.cs | Batch-проверка камеры, ввода (клавиатура и виртуальный геймпад), препятствий, дверей лифта, шейдеров сборки, анимации ходьбы/бега и отдыха совы в клетке |
 | unity/Assets/Editor/ProjectSetup.cs | Создание сцены при первом импорте |
 | unity/Packages/manifest.json | Минимальные зависимости модулей |
 | godot/ | Предыдущий Godot-прототип |

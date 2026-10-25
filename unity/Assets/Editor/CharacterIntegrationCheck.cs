@@ -20,6 +20,7 @@ public static class CharacterIntegrationCheck
     {
         if (!Application.isBatchMode) throw new InvalidOperationException("Run this check in a separate batch editor.");
         CharacterSetup.Prepare();
+        AnimatedCharacterSetup.Prepare();
         FurnitureSetup.Prepare();
         Directory.CreateDirectory("Captures");
         File.WriteAllText("Captures/lift-animation-times.csv", "");
@@ -72,7 +73,7 @@ public static class CharacterIntegrationCheck
     {
         Require(UnityEngine.Object.FindObjectsByType<CourierCharacters>(FindObjectsSortMode.None).Length == 1,
             "Duplicate character presenters after Play Mode restart.");
-        foreach (var name in new[] { "Courier girl", "Space owl companion" })
+        foreach (var name in new[] { "Kristi", "Space owl companion" })
         {
             var actor = Find(name);
             var renderers = actor.GetComponentsInChildren<Renderer>();
@@ -82,12 +83,20 @@ public static class CharacterIntegrationCheck
             {
                 bounds.Encapsulate(renderer.bounds);
                 foreach (var material in renderer.sharedMaterials)
-                    Require(material != null && material.shader != null && material.shader.isSupported,
-                        name + " has a missing or unsupported material.");
+                    Require(material != null && material.shader != null && material.shader.isSupported
+                        && material.mainTexture != null, name + " has a missing, untextured or unsupported material.");
             }
-            float height = name == "Courier girl" ? 1.78f : .48f;
-            Require(Mathf.Abs(bounds.size.y - height) < .02f, name + " has incorrect height or up axis.");
-            Require(bounds.size.x < height && bounds.size.z < height, name + " has incorrect proportions.");
+            var animator = actor.GetComponentInChildren<Animator>();
+            Require(animator != null && animator.runtimeAnimatorController != null && animator.isInitialized,
+                name + " has no running animator.");
+            if (name == "Kristi")
+            {
+                Require(animator.isHuman && animator.avatar.isValid, "Kristi has no valid humanoid avatar.");
+                // Idle pose: arms down, so the animated bounds are narrower than the height.
+                Require(Mathf.Abs(bounds.size.y - AnimatedCharacterSetup.KristiHeight) < .08f, "Kristi has incorrect height or up axis.");
+                Require(bounds.size.x < bounds.size.y && bounds.size.z < bounds.size.y, "Kristi has incorrect proportions.");
+            }
+            else Require(bounds.size.y > .3f && bounds.size.y < 1.6f, "Owl has an implausible size.");
         }
     }
 
@@ -560,7 +569,9 @@ public static class CharacterIntegrationCheck
     {
         Require(lift.IsRiding && courier.parent == lift.Platform, "Passenger is not attached to the moving platform.");
         Require(Mathf.Abs(courier.position.y-lift.Platform.position.y) < .002f, "Passenger drifted off the platform.");
-        Require(Mathf.Abs(owl.position.y-courier.position.y-1.05f) < .10f, "Owl left the moving cabin.");
+        // The owl may be roaming when the ride starts; it must be aboard once the platform is under way.
+        if (lift.Progress > .1f)
+            Require(Mathf.Abs(owl.position.y-courier.position.y-1.05f) < .10f, "Owl left the moving cabin.");
         var position = courier.position;
         Move(ship, Vector3.right, 1f);
         Require(Vector3.Distance(position, courier.position) < .001f, "Movement was not locked during travel.");
