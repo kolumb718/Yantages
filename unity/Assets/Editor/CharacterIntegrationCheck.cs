@@ -154,7 +154,7 @@ public static class CharacterIntegrationCheck
         Require(Vector3.Distance(platform.position, new Vector3(.3f, .08f, 1.8f)) > 3,
             "Hologram still overlaps the lift.");
         Require(Find("Hanging wall cable").GetComponent<LineRenderer>().positionCount > 2, "Hanging wire has no curved geometry.");
-        var wardrobe = Find("Equipment wardrobe");
+        var wardrobe = FindInactive("Equipment wardrobe");
         var equipment = wardrobe.GetComponentsInChildren<Renderer>();
         Require(equipment.Length > 0, "Wardrobe has no geometry.");
         var wardrobeBounds = equipment[0].bounds;
@@ -165,10 +165,13 @@ public static class CharacterIntegrationCheck
                 Require(material != null && material.shader != null && material.shader.isSupported,
                     "Wardrobe equipment has an unsupported material.");
         }
-        Require(wardrobeBounds.min.y > -.05f && wardrobeBounds.max.y < 3.2f && wardrobeBounds.max.x < 13.4f
-            && wardrobeBounds.max.z < 3.2f, "Wardrobe does not fit inside the ship.");
+        Require(Vector3.Distance(wardrobe.localPosition, ShipLayout.EvaWardrobePosition)<.001f
+            && wardrobe.parent.name == "Underground hangar", "EVA wardrobe is not attached to the hangar.");
+        Require(wardrobeBounds.min.y > ShipLayout.HangarHeight-.05f
+            && wardrobeBounds.max.y < ShipLayout.HangarHeight+3.2f,
+            "Wardrobe does not stand on the hangar floor.");
         foreach (var name in new[] { "Stored EVA suit", "Wardrobe helmet visor", "Wardrobe medkit",
-            "Wardrobe oxygen tank", "Wardrobe tool case" }) Find(name);
+            "Wardrobe oxygen tank", "Wardrobe tool case" }) FindInactive(name);
     }
 
     static void ValidateWindowParallax()
@@ -266,8 +269,8 @@ public static class CharacterIntegrationCheck
             }
             else if (name == "details-wardrobe")
             {
-                camera.transform.position = new Vector3(13.7f, 2.5f, 7.2f);
-                camera.transform.LookAt(new Vector3(11.6f, 1.35f, 2.0f));
+                camera.transform.position = ShipLayout.EvaWardrobePosition+new Vector3(3,2,5);
+                camera.transform.LookAt(ShipLayout.EvaWardrobePosition+Vector3.up*1.2f);
                 camera.fieldOfView = 40;
             }
             else if (name.StartsWith("lift-") && name != "lift-overview")
@@ -339,7 +342,6 @@ public static class CharacterIntegrationCheck
                 Capture("details-window", false);
                 ValidateWindowParallax();
                 Capture("details-hologram", false);
-                Capture("details-wardrobe", false);
                 SessionState.SetFloat("Orbita.CharacterCheck.PlanetYaw", Find("Holographic planet").localEulerAngles.y);
                 var start = courier.position;
                 Move(ship, Vector3.right, 1f);
@@ -484,6 +486,7 @@ public static class CharacterIntegrationCheck
                 Require(lift.CurrentDeck == -1 && Mathf.Abs(courier.position.y-ShipLayout.HangarHeight) < .001f,
                     "Hangar arrival height is incorrect.");
                 Require(courier.parent != lift.Platform, "Hangar passenger was not released.");
+                Capture("details-wardrobe", false);
                 Require(Camera.main.transform.position.y < SessionState.GetFloat("Orbita.CharacterCheck.HomeCameraY", 0)-3,
                     "Camera did not follow to the underground room.");
                 Require(hangar.Interior.gameObject.activeSelf && !FindInactive("Panoramic city window").gameObject.activeInHierarchy,

@@ -15,6 +15,9 @@ public static class ShipLayout
     public static readonly Vector3 BookshelfSize = new Vector3(1.15f, 2.00f, .40f);
     public const float MonsteraHeight = 1.35f, SnakePlantHeight = 1.10f, PothosHeight = .45f;
     public const float WardrobeHeight = 2.50f, EvaSuitHeight = 1.95f;
+    public static readonly Vector3 EvaWardrobePosition = new Vector3(5.2f, HangarHeight, -1.8f);
+    public static Bounds EvaWardrobeAirObstacle => new Bounds(EvaWardrobePosition+Vector3.up*(WardrobeHeight*.5f),
+        new Vector3(3.3f,WardrobeHeight,1.8f));
     public static readonly Vector3 CoffeeTableSize = new Vector3(1.10f, .06f, .60f);
     public const float CoffeeTableTop = .48f, GalleyWorktopHeight = .95f;
     public static readonly Vector3 GalleySize = new Vector3(2.40f, .88f, .65f);

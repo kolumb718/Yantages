@@ -7,6 +7,7 @@ public sealed class ShipWardrobe : MonoBehaviour
     Transform root;
     Material frame, timber, recess, cream, rust, rubber, brass, visor, cyan, red;
     bool built;
+    public Transform Root => root;
 
     public void Build(Transform ship)
     {
@@ -14,7 +15,7 @@ public sealed class ShipWardrobe : MonoBehaviour
         built = true;
         root = new GameObject("Equipment wardrobe").transform;
         root.SetParent(ship, false);
-        root.localPosition = new Vector3(11.6f, 0, 2.0f);
+        root.localPosition = ShipLayout.EvaWardrobePosition;
         frame = Material("Wardrobe graphite", new Color(.20f, .25f, .28f));
         timber = Material("Wardrobe honey trim", new Color(.48f, .30f, .16f));
         recess = Material("Wardrobe dark interior", new Color(.10f, .135f, .15f));

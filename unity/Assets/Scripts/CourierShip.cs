@@ -11,7 +11,7 @@ public sealed class CourierShip : MonoBehaviour
     {
         ("Terracotta sofa", .05f), ("Monstera downstairs", .2f), ("Snake plant bridge", .15f),
         ("Cabin bed", .05f), ("Wood bookshelf", .05f), ("Monstera upstairs", .2f),
-        ("Pothos reading nook", .1f), ("Equipment wardrobe", .05f),
+        ("Pothos reading nook", .1f),
     };
 
     static readonly System.Collections.Generic.HashSet<string> HangarObstacles = new System.Collections.Generic.HashSet<string>
@@ -49,7 +49,6 @@ public sealed class CourierShip : MonoBehaviour
         var galley = gameObject.AddComponent<LivingGalleyDetails>();
         galley.Build(transform);
         gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
-        gameObject.AddComponent<ShipWardrobe>().Build(transform);
         var wardrobe = gameObject.AddComponent<CabinWardrobe>();
         wardrobe.Build(transform);
         var aviary = gameObject.AddComponent<OwlAviary>();
@@ -84,6 +83,9 @@ public sealed class CourierShip : MonoBehaviour
         framing.Initialize(view, transform);
         var hangar = gameObject.AddComponent<ShipHangar>();
         hangar.Build(transform);
+        var equipment = gameObject.AddComponent<ShipWardrobe>();
+        equipment.Build(hangar.Interior);
+        Motor.AddObstacle(equipment.Root, .05f);
         // Registered while the hangar is still active: hidden renderers report empty bounds.
         Motor.AddObstacle(hangar.Craft, .1f);
         foreach (Transform part in hangar.Interior)

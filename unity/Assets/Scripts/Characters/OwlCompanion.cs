@@ -17,7 +17,7 @@ public sealed class OwlCompanion : MonoBehaviour
     static readonly Bounds[] Solid =
     {
         Box(new Vector3(-1.3f, -9, .35f), new Vector3(1.9f, 7, 3.25f)),  // glass lift shaft
-        Box(new Vector3(10, 0, 1.2f), new Vector3(13.3f, 3.2f, 3.0f)),  // equipment wardrobe
+        ShipLayout.EvaWardrobeAirObstacle,
     };
 
     Transform courier;

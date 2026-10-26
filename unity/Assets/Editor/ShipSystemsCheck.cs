@@ -230,6 +230,19 @@ public static class ShipSystemsCheck
                 Require(ship.Deck == ShipLayout.HangarDeck, "Cabin-to-hangar ride did not arrive.");
                 framing.UpdateDeckView();
                 Capture("audit-third-person-hangar");
+                var eva = GameObject.Find("Equipment wardrobe");
+                Require(eva!=null && eva.activeInHierarchy,"EVA locker is hidden after hangar arrival.");
+                Require(Mathf.Abs(BoundsOf("Stored EVA suit").size.y-ShipLayout.EvaSuitHeight)<.03f,"EVA suit has incorrect human scale.");
+                var landing = courier.position;
+                courier.position = new Vector3(-1.4f,ShipLayout.HangarHeight,1.8f);
+                WalkTo(ship,new Vector3(-1.4f,ShipLayout.HangarHeight,3.6f));
+                WalkTo(ship,new Vector3(5.2f,ShipLayout.HangarHeight,3.6f));
+                WalkTo(ship,ShipLayout.EvaWardrobePosition+Vector3.forward*1.4f);
+                ship.Motor.Move(Vector3.back,2);
+                Require(courier.position.z>ShipLayout.EvaWardrobePosition.z+.55f,"Courier walks through the hangar EVA locker.");
+                CaptureFrom("eva-locker-hangar",ShipLayout.EvaWardrobePosition+new Vector3(3,2,5),
+                    ShipLayout.EvaWardrobePosition+Vector3.up*1.2f);
+                courier.position=landing;
                 ship.Interact();
                 Require(ship.Lift.IsRiding && ship.Lift.DestinationDeck == ShipLayout.LivingDeck,
                     "Cannot return home after the direct descent.");
@@ -373,7 +386,6 @@ public static class ShipSystemsCheck
         Require(Mathf.Abs(window.min.y)<.015f && Mathf.Abs(window.max.y-5)<.015f,"Window is not five metres high from the floor.");
         Require(GameObject.Find("Navigation console")==null && GameObject.Find("Navigation display")==null,
             "The rectangle with three white displays is still present.");
-        Require(Mathf.Abs(BoundsOf("Stored EVA suit").size.y-ShipLayout.EvaSuitHeight)<.03f,"EVA suit has incorrect human scale.");
         Require(Mathf.Abs(BoundsOf("Order terminal").max.y-ShipLayout.TerminalHeight)<.03f,"Terminal is not human-sized.");
         var view = Camera.main;
         camera.UpdateDeckView();
@@ -474,8 +486,7 @@ public static class ShipSystemsCheck
             "Courier walked through the lounge coffee table.");
         courier.position = new Vector3(11.6f, 0, 4.2f);
         ship.Motor.Move(Vector3.back, 3);
-        Log("walk into wardrobe stops at z " + courier.position.z.ToString("F2"));
-        Require(courier.position.z > 2.4f, "Courier walked through the equipment wardrobe.");
+        Require(Mathf.Abs(courier.position.z-1.2f)<.02f,"Removed EVA locker still blocks the living deck.");
         courier.position = new Vector3(-4, 0, -.6f);
         ship.Motor.Move(Vector3.right, 100);
         Require(Mathf.Abs(courier.position.x - 13.2f) < .001f, "Furniture blocks the main deck route.");
