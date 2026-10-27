@@ -12,6 +12,10 @@ Origin: git@github.com:kolumb718/Yantages.git.
 | unity/Assets/Scripts/Core/ | SceneKit — материалы, примитивы, надписи и свет с владением ресурсами; ShipShaders — шейдеры, гарантированно попадающие в сборку |
 | unity/Assets/Scripts/Input/CourierInput.cs | Input System: действия клавиатуры и геймпада, подписи клавиш активного устройства |
 | unity/Assets/Scripts/Ship/ | ShipLayout — все размеры корабля; CourierMotor и FloorSweep — ходьба, границы и мебель-препятствия; OrderTerminal — заказ; ShipInterior — корпус, встроенная мебель и свет |
+| unity/Assets/Scripts/Ship/GalaxyAtlas.cs | Каталог миров из JSON, навигация атласа и принятие общей с терминалом заявки |
+| unity/Assets/Scripts/UI/GalaxyMapView.cs | Галактический интерфейс: отдельная камера, реальные текст/геометрия и экранные hit boxes |
+| unity/Assets/Resources/Galaxy/planets.json | Черновой лор шести миров и заявки еды; первый заказ Нептуна берётся из DeliveryOrder.NeptuneSoup |
+| unity/Assets/Editor/GalaxyIntegrationCheck.cs | Реальные события клавиатуры/мыши, рендер атласа и карточек, заказы, блокировка/возврат ходьбы, повторный Play Mode |
 | unity/Assets/Scripts/Ship/Lift/ | ShipLift — поездка, пассажир, плавные двери, стены шахты; GlassLiftVisuals — стеклянная шахта и индикаторы |
 | unity/Assets/Scripts/Camera/ShipCameraFraming.cs | Третье лицо: орбита, дистанция, приближение у препятствий; C — общий план; видимость этажей и параллакс |
 | unity/Assets/Scripts/Scenery/ | Окно с городом, ангар с кораблём, надписи и голограмма, гардероб, клетка совы OwlAviary, размещение мебели из prefab |

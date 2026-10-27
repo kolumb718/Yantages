@@ -7,6 +7,12 @@ public sealed class ShipInteriorDetails : MonoBehaviour
     Transform dressing;
     readonly SceneKit kit = new SceneKit();
     Material metal, warmMetal, cable, amber, cyan, mint;
+    TextMesh atlasPrompt;
+
+    public void HighlightAtlas(bool near)
+    {
+        if(atlasPrompt!=null)atlasPrompt.text=near?"ОТКРЫТЬ АТЛАС МАРШРУТОВ":"АТЛАС МАРШРУТОВ";
+    }
 
     public void Build(Transform ship)
     {
@@ -125,7 +131,7 @@ public sealed class ShipInteriorDetails : MonoBehaviour
     {
         var platform = new GameObject("Navigation hologram platform").transform;
         platform.SetParent(dressing, false);
-        platform.localPosition = new Vector3(7.8f, .08f, -.8f);
+        platform.localPosition = ShipLayout.HologramPlatformPosition;
         Primitive("Projector base", PrimitiveType.Cylinder, new Vector3(0, .02f, 0), new Vector3(2.12f, .10f, 2.12f), metal, platform);
         Primitive("Projector bronze rim", PrimitiveType.Cylinder, new Vector3(0, .12f, 0), new Vector3(1.87f, .035f, 1.87f), warmMetal, platform);
         Primitive("Projector dark lens", PrimitiveType.Cylinder, new Vector3(0, .16f, 0), new Vector3(1.62f, .025f, 1.62f), metal, platform);
@@ -176,6 +182,8 @@ public sealed class ShipInteriorDetails : MonoBehaviour
                 new Vector3(Mathf.Cos(a)*.25f, .77f, Mathf.Sin(a)*.25f) }, cyan, .008f, platform);
         }
         Label("Projector planet label", "ЗЕМЛЯ / EARTH", new Vector3(0, .47f, 1.02f), .12f, new Color(.53f, .91f, 1), platform, false);
+        atlasPrompt=kit.Caption("Projector atlas prompt","АТЛАС МАРШРУТОВ",new Vector3(0,.28f,1.04f),.085f,
+            new Color(.67f,.93f,.85f),platform);
         kit.PointLight("Hologram projector light", new Vector3(0, .6f, 0), new Color(.22f, .73f, 1), .45f, 3, platform);
     }
 

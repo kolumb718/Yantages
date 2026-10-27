@@ -34,6 +34,9 @@ public static class ShipLayout
     public static readonly Vector3 LiftCentre = new Vector3(.3f, 0, 1.8f);
     public static readonly Vector3 TerminalPosition = new Vector3(.4f, 0, -.6f);
     public const float TerminalReach = 1.35f;
+    public static readonly Vector3 HologramPlatformPosition = new Vector3(7.8f,.08f,-.8f);
+    public static Vector3 HologramCentre => HologramPlatformPosition+Vector3.up*1.25f;
+    public const float HologramReach = 2.35f, HologramPickRadius = .72f;
     public static readonly Vector3 ClothingWardrobePosition = new Vector3(-3.3f, DeckHeight, -3.9f);
     public static readonly Vector3 ClothingWardrobeSize = new Vector3(1.65f, 2.2f, .62f);
     public static readonly Vector3 ClothingWardrobeApproach = new Vector3(-3.3f, DeckHeight, -2.65f);

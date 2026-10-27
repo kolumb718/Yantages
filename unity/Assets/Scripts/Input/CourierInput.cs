@@ -13,6 +13,7 @@ public sealed class CourierInput : IDisposable
     readonly InputActionMap map = new InputActionMap("Courier");
     readonly InputAction move;
     readonly InputAction mouseLook, stickLook, orbitHold, scroll;
+    readonly InputAction click, pointer;
     readonly InputAction[] buttons;
 
     public bool UsingGamepad { get; private set; }
@@ -32,6 +33,8 @@ public sealed class CourierInput : IDisposable
         stickLook = map.AddAction("StickLook",InputActionType.Value,"<Gamepad>/rightStick");
         orbitHold = map.AddAction("OrbitHold",InputActionType.Button,"<Mouse>/rightButton");
         scroll = map.AddAction("Zoom",InputActionType.Value,"<Mouse>/scroll/y");
+        click = map.AddAction("Click",InputActionType.Button,"<Mouse>/leftButton");
+        pointer = map.AddAction("Pointer",InputActionType.Value,"<Mouse>/position");
 
         // Order matches CourierAction.
         buttons = new[]
@@ -64,6 +67,8 @@ public sealed class CourierInput : IDisposable
         (orbitHold.IsPressed() ? mouseLook.ReadValue<Vector2>()*.12f : Vector2.zero)
         + stickLook.ReadValue<Vector2>()*(120*deltaTime);
     public float ZoomDelta => -scroll.ReadValue<float>()*.0025f;
+    public bool ClickPressed => click.WasPressedThisFrame();
+    public Vector2 PointerPosition => pointer.ReadValue<Vector2>();
     public bool Held(CourierAction action) => buttons[(int)action].IsPressed();
     public bool Pressed(CourierAction action) => buttons[(int)action].WasPressedThisFrame();
 

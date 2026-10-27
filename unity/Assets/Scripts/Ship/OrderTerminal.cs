@@ -1,13 +1,15 @@
 using UnityEngine;
 
+[System.Serializable]
 public sealed class DeliveryOrder
 {
-    public string Title, Route, Client, Cargo, Note, NextStep;
+    public string Title, Route, Client, Cargo, Note, NextStep, PlanetId;
     public int Reward;
 
     public static readonly DeliveryOrder NeptuneSoup = new DeliveryOrder
     {
         Title = "Ужин на краю Солнечной системы",
+        PlanetId = "neptune",
         Route = "ЗЕМЛЯ → НЕПТУН",
         Client = "Мира · станция «Тритон»",
         Cargo = "Горячий суп с лунными грибами",
@@ -20,7 +22,7 @@ public sealed class DeliveryOrder
 // The order terminal on the living deck. The HUD reads this state; input changes it.
 public sealed class OrderTerminal
 {
-    public DeliveryOrder Order { get; } = DeliveryOrder.NeptuneSoup;
+    public DeliveryOrder Order { get; private set; } = DeliveryOrder.NeptuneSoup;
     public bool IsOpen { get; private set; }
     public bool Accepted { get; private set; }
 
@@ -30,4 +32,12 @@ public sealed class OrderTerminal
     public void Open() => IsOpen = true;
     public void Close() => IsOpen = false;
     public void Accept() => Accepted = true;
+    // Browsing a planet cannot overwrite an accepted delivery.
+    public bool TryAccept(DeliveryOrder order)
+    {
+        if (Accepted || order == null) return false;
+        Order = order;
+        Accepted = true;
+        return true;
+    }
 }

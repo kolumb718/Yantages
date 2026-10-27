@@ -1,0 +1,2 @@
+Galaxy: E and world click; real UI click; arrow tabs; all six worlds/six sections rendered; canonical Neptune order; one active food delivery; terminal synchronization; Escape/back; walking lock/release PASS.
+GALAXY_CHECK_PASS: Play Mode restart clean.

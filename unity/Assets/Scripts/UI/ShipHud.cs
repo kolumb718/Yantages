@@ -21,6 +21,7 @@ public sealed class ShipHud : MonoBehaviour
     void OnGUI()
     {
         if (ship == null || !ship.Ready || ship.Controls == null) return;
+        if(ship.Galaxy!=null && ship.Galaxy.IsOpen)return;
         EnsureStyles();
         float scale = Mathf.Max(.55f, Screen.height / Canvas);
         var previous = GUI.matrix;
@@ -100,7 +101,8 @@ public sealed class ShipHud : MonoBehaviour
             LiftPrompt.LoungeChoices => new[] { (interact, "В каюту"), (descend, "В ангар") },
             LiftPrompt.CabinChoices => new[] { (interact, "В гостиную"), (descend, "В ангар") },
             LiftPrompt.ToLounge => new[] { (interact, "В гостиную") },
-            _ => ship.AtWardrobe ? new[] { (interact, "Гардероб · сменить одежду") }
+            _ => ship.AtGalaxy ? new[] { (interact,"Открыть галактику · планеты и заказы") }
+                : ship.AtWardrobe ? new[] { (interact, "Гардероб · сменить одежду") }
                 : ship.AtTerminal ? new[] { (interact, "Открыть заказ") } : null,
         };
         if (parts == null) return;

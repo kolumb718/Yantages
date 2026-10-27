@@ -22,16 +22,20 @@ public sealed class CourierShip : MonoBehaviour
     CourierInput input;
     ShipInterior interior;
     ShipCameraFraming framing;
+    ShipInteriorDetails details;
     Camera view;
 
     public CourierMotor Motor { get; private set; }
     public ShipLift Lift { get; private set; }
     public OrderTerminal Terminal { get; } = new OrderTerminal();
     public CourierOutfits Outfits { get; private set; }
+    public GalaxyAtlas Galaxy { get; private set; }
+    public GalaxyMapView GalaxyView { get; private set; }
     public CourierInput Controls => input;
     public int Deck => Motor.Deck;
     public bool Ready => Motor != null;
     public bool AtTerminal => Ready && OrderTerminal.InReach(Motor.Courier.position, Deck);
+    public bool AtGalaxy => Ready && GalaxyAtlas.InReach(Motor.Courier.position,Deck);
     public bool AtWardrobe => Ready && Deck == ShipLayout.CabinDeck
         && Vector3.Distance(Motor.Courier.position, ShipLayout.ClothingWardrobeApproach) <= ShipLayout.ClothingWardrobeReach;
     public bool AtLift => Ready && Lift.IsNear(Motor.Courier.position, Deck);
@@ -48,7 +52,8 @@ public sealed class CourierShip : MonoBehaviour
         living.Build(transform);
         var galley = gameObject.AddComponent<LivingGalleyDetails>();
         galley.Build(transform);
-        gameObject.AddComponent<ShipInteriorDetails>().Build(transform);
+        details=gameObject.AddComponent<ShipInteriorDetails>();
+        details.Build(transform);
         var wardrobe = gameObject.AddComponent<CabinWardrobe>();
         wardrobe.Build(transform);
         var aviary = gameObject.AddComponent<OwlAviary>();
@@ -93,6 +98,9 @@ public sealed class CourierShip : MonoBehaviour
         framing.ConfigureHangar(hangar.Interior, courier, homeGroups, Lift.Visuals);
 
         input = new CourierInput();
+        Galaxy=new GalaxyAtlas(Terminal);
+        GalaxyView=gameObject.AddComponent<GalaxyMapView>();
+        GalaxyView.Initialize(Galaxy,input,view);
         gameObject.AddComponent<ShipHud>().Bind(this);
     }
 
@@ -115,7 +123,9 @@ public sealed class CourierShip : MonoBehaviour
     {
         if (!Ready) return;
         interior.SetTerminalHighlight(AtTerminal && !Terminal.IsOpen);
+        details.HighlightAtlas(AtGalaxy);
         Motor.Turn(Time.deltaTime);
+        if(Galaxy.IsOpen) { GalaxyView.HandleInput(input); return; }
         if (Outfits.IsOpen)
         {
             Outfits.Navigate(input.Move.x);
@@ -132,6 +142,8 @@ public sealed class CourierShip : MonoBehaviour
             return;
         }
         if (Lift.IsRiding) return;
+        if (AtGalaxy && input.ClickPressed && GalaxyAtlas.HitsHologram(view.ScreenPointToRay(input.PointerPosition)))
+        { Galaxy.Open(); return; }
         float speed = input.Held(CourierAction.Sprint) ? CourierMotor.SprintSpeed : CourierMotor.WalkSpeed;
         Motor.Move(MovementDirection(input.Move), speed * Time.deltaTime);
         if (input.Pressed(CourierAction.Interact)) Interact();
@@ -151,14 +163,16 @@ public sealed class CourierShip : MonoBehaviour
     {
         if (Lift.IsRiding) return;
         if (Outfits.IsOpen) return;
-        if (AtWardrobe) Outfits.Open();
+        if (Galaxy.IsOpen) return;
+        if (AtGalaxy) Galaxy.Open();
+        else if (AtWardrobe) Outfits.Open();
         else if (AtLift) Lift.TryUse(Deck);
         else if (AtTerminal) Terminal.Open();
     }
 
     public void Descend()
     {
-        if (!Terminal.IsOpen && !Outfits.IsOpen && AtLift) Lift.TryUse(Deck, -1);
+        if (!Terminal.IsOpen && !Outfits.IsOpen && !Galaxy.IsOpen && AtLift) Lift.TryUse(Deck, -1);
     }
 
     public void AcceptOrClose()
