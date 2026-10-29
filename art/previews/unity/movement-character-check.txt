@@ -1,0 +1,1 @@
+PASS: scene and materials, glass lift boundaries and open doorway, clear shaft opening, six-second ascent/descent, intermediate passenger/platform height, movement lock, owl cabin travel, repeat-input guard, arrival release, empty lift call and boarding, terminal, Play Mode restart.

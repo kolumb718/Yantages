@@ -16,8 +16,8 @@ public static class GaitClips
 
     static readonly Gait Walk = new Gait
     {
-        Length = 1.0f, Hip = .42f, Knee = .55f, KneeStance = .06f, Foot = .22f,
-        Arm = .32f, Elbow = .12f, Lean = .02f, Twist = .05f, Bob = .012f,
+        Length = 1.0f, Hip = .30f, Knee = .35f, KneeStance = .04f, Foot = .15f,
+        Arm = .24f, Elbow = .12f, Lean = .02f, Twist = .035f, Bob = .009f,
     };
 
     static readonly Gait Run = new Gait
@@ -43,9 +43,11 @@ public static class GaitClips
 
         var clip = new AnimationClip { frameRate = 30, name = System.IO.Path.GetFileNameWithoutExtension(path) };
         var curves = new Dictionary<string, Func<float, float>>();
-        // Hold the idle posture for everything the gait does not drive.
+        // Preserve hands and upper-body rest muscles, but never copy baked foot IK targets
+        // from an asymmetric idle into locomotion. Those targets fight the walking muscles.
         foreach (var pair in baseline)
         {
+            if (Array.IndexOf(HumanTrait.MuscleName,pair.Key)<0 && pair.Key!="RootT.y") continue;
             float value = pair.Value;
             curves[pair.Key] = _ => value;
         }
@@ -53,32 +55,38 @@ public static class GaitClips
 
         foreach (var side in new[] { "Left", "Right" })
         {
-            // Phase 0: this leg passes under the body moving forward; the other leg is half a cycle later.
+            // Phase 0 is front contact; stance sweeps backwards, then the knee folds for swing.
             float offset = side == "Left" ? 0 : .5f;
             float Wave(float t) => (t / gait.Length + offset) * Mathf.PI * 2;
             string leg = side + " Upper Leg Front-Back", knee = side + " Lower Leg Stretch", foot = side + " Foot Up-Down";
             string arm = side + " Arm Front-Back", forearm = side + " Forearm Stretch";
-            float hip0 = Base(leg), knee0 = Base(knee), foot0 = Base(foot), arm0 = Base(arm), forearm0 = Base(forearm);
-            curves[leg] = t => hip0 + gait.Hip * Mathf.Sin(Wave(t));
-            // The knee folds while the leg swings forward (cos > 0) and softens on landing.
+            // Both legs use the same neutral sagittal pose. The imported idle has a turned-out
+            // left hip and differently bent knees: retaining those offsets produces a sideways sway.
+            float hip0 = 0, knee0 = .92f, foot0 = 0, arm0 = Base(arm), forearm0 = Base(forearm);
+            foreach (string muscle in new[] { " Upper Leg In-Out", " Upper Leg Twist In-Out",
+                " Lower Leg Twist In-Out", " Foot Twist In-Out", " Toes Up-Down" })
+                curves[side+muscle] = _ => 0;
+            curves[leg] = t => hip0 - gait.Hip * Mathf.Cos(Wave(t));
             curves[knee] = t =>
             {
-                float swing = Mathf.Pow(Mathf.Max(0, Mathf.Cos(Wave(t) - .35f)), 1.4f);
+                float swing = Mathf.Pow(Mathf.Max(0, -Mathf.Sin(Wave(t))), 1.4f);
                 return knee0 - gait.Knee * swing - gait.KneeStance;
             };
-            curves[foot] = t => foot0 + gait.Foot * Mathf.Sin(Wave(t) - .6f);
+            curves[foot] = t => foot0 + gait.Foot * Mathf.Cos(Wave(t) + .3f);
             // Each arm swings against the leg on its own side.
-            curves[arm] = t => arm0 - gait.Arm * Mathf.Sin(Wave(t));
+            curves[arm] = t => arm0 - gait.Arm * Mathf.Cos(Wave(t));
             curves[forearm] = t => forearm0 - gait.Elbow;
         }
         float Stride(float t) => t / gait.Length * Mathf.PI * 2;
         float spine0 = Base("Spine Front-Back"), twist0 = Base("Spine Twist Left-Right"), chest0 = Base("Chest Twist Left-Right");
         float rootY = Base("RootT.y");
+        curves["RootT.x"] = _ => 0; curves["RootT.z"] = _ => 0;
+        curves["RootQ.x"] = _ => 0; curves["RootQ.y"] = _ => 0; curves["RootQ.z"] = _ => 0; curves["RootQ.w"] = _ => 1;
         curves["Spine Front-Back"] = t => spine0 + gait.Lean;
-        curves["Spine Twist Left-Right"] = t => twist0 + gait.Twist * Mathf.Sin(Stride(t));
-        curves["Chest Twist Left-Right"] = t => chest0 - gait.Twist * Mathf.Sin(Stride(t));
+        curves["Spine Twist Left-Right"] = t => twist0 + gait.Twist * Mathf.Cos(Stride(t));
+        curves["Chest Twist Left-Right"] = t => chest0 - gait.Twist * Mathf.Cos(Stride(t));
         // The body is highest as the legs pass each other, twice per cycle.
-        if (baseline.ContainsKey("RootT.y")) curves["RootT.y"] = t => rootY + gait.Bob * Mathf.Cos(Stride(t) * 2);
+        if (baseline.ContainsKey("RootT.y")) curves["RootT.y"] = t => rootY - gait.Bob * Mathf.Cos(Stride(t) * 2);
 
         foreach (var pair in curves)
         {
@@ -86,11 +94,7 @@ public static class GaitClips
             for (int i = 0; i <= Samples; i++)
             {
                 float time = gait.Length * i / Samples;
-                // The humanoid muscle signs on this avatar put the original low, loaded
-                // foot on a +Z sweep (a backwards stride). Reverse the complete cycle,
-                // including the knee/ankle and opposing arm phases, so stance moves -Z
-                // while the courier walks along her unchanged +Z facing direction.
-                keys[i] = new Keyframe(time, pair.Value(gait.Length - time));
+                keys[i] = new Keyframe(time, pair.Value(time));
             }
             var curve = new AnimationCurve(keys);
             for (int i = 0; i < keys.Length; i++) curve.SmoothTangents(i, 0);

@@ -4,13 +4,15 @@ using UnityEngine;
 // Standard is pinned by Resources/Shaders/StandardReference.mat, so player builds keep them all.
 public static class ShipShaders
 {
-    static Shader standard, unlit, windowCity, hologram, galaxyPlanet;
+    static Shader standard, unlit, windowCity, hologram, galaxyPlanet, worldText, windowSurface;
 
     public static Shader Standard => Get(ref standard, "Standard");
     public static Shader Unlit => Get(ref unlit, "Orbita/Unlit");
     public static Shader WindowCity => Get(ref windowCity, "Orbita/WindowCity");
     public static Shader Hologram => Get(ref hologram, "Orbita/Hologram");
     public static Shader GalaxyPlanet => Get(ref galaxyPlanet, "Orbita/GalaxyPlanet");
+    public static Shader WorldText => Get(ref worldText, "Orbita/WorldText");
+    public static Shader WindowSurface => Get(ref windowSurface, "Orbita/WindowSurface");
 
     static Shader Get(ref Shader cache, string name)
     {

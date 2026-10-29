@@ -6,7 +6,7 @@ public sealed class CourierCharacters : MonoBehaviour
 {
     public const string DisplayName = "Кристи";
     // Ground speed at which each generated cycle's feet do not slide (blend-tree thresholds, m/s).
-    public const float WalkCycleSpeed = 1.5f, RunCycleSpeed = 3.6f;
+    public const float WalkCycleSpeed = CourierMotor.WalkSpeed, RunCycleSpeed = CourierMotor.SprintSpeed;
     static readonly int SpeedId = Animator.StringToHash("Speed");
 
     [SerializeField] GameObject courierPrefab;
@@ -15,6 +15,8 @@ public sealed class CourierCharacters : MonoBehaviour
     Transform courier;
     Animator courierAnimator;
     Vector3 previousPosition;
+    CourierLegPlacement legs;
+    public CourierLegPlacement Legs => legs;
 
     public OwlCompanion Owl { get; private set; }
 
@@ -29,6 +31,11 @@ public sealed class CourierCharacters : MonoBehaviour
         var visual = Instantiate(courierPrefab, courier, false);
         visual.name = "Kristi";
         courierAnimator = visual.GetComponentInChildren<Animator>();
+        if(courierAnimator!=null && courierAnimator.isHuman)
+        {
+            courierAnimator.Rebind();courierAnimator.Update(0);
+            legs=new CourierLegPlacement(courier,courierAnimator);
+        }
         previousPosition = position;
 
         var owl = Instantiate(owlPrefab, transform, false);
@@ -56,5 +63,6 @@ public sealed class CourierCharacters : MonoBehaviour
         courierAnimator.SetFloat(SpeedId, speed, .1f, Time.deltaTime);
         // Above the run cycle's natural pace, play it faster instead of letting feet slide.
         courierAnimator.speed = Mathf.Max(1, speed / RunCycleSpeed);
+        legs?.Update(speed,Time.deltaTime);
     }
 }

@@ -276,7 +276,8 @@ public static class ShipSystemsCheck
                     SessionState.SetInt("Orbita.ShipSystems.Shot", shot + 1);
                 }
                 if (shot < 6) return;
-                Require(animator.GetFloat("Speed") > (running ? 3.6f : 2), "Locomotion speed does not reach the animator.");
+                float expectedSpeed=running ? CourierMotor.SprintSpeed : CourierMotor.WalkSpeed;
+                Require(Mathf.Abs(animator.GetFloat("Speed")-expectedSpeed)<.15f, "Locomotion speed does not reach the animator.");
                 Walk(null, 0);
                 SessionState.SetInt("Orbita.ShipSystems.Shot", 0);
                 SessionState.SetFloat("Orbita.ShipSystems.Clock", 0);

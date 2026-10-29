@@ -1,0 +1,1 @@
+WALKING_PRESENTATION_PASS: 1141 frames, lateral error 0,0377 m, fore/aft span 0,932 m, swing lift 0,100 m, stance drift 0,122 m/s.

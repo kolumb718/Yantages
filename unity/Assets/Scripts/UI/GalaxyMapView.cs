@@ -296,7 +296,7 @@ public sealed class GalaxyMapView : MonoBehaviour
 
     void OnDestroy()
     {
-        if(gameCamera!=null)gameCamera.cullingMask=originalMask;
+        if(gameCamera!=null)gameCamera.cullingMask=(gameCamera.cullingMask&~(1<<5))|(originalMask&(1<<5));
         if(root!=null)Destroy(root.gameObject);
         kit.Release();
     }

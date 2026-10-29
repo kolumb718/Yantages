@@ -26,6 +26,10 @@ public static class ShipLayout
     public const float ArmchairHeight = .90f;
     public const float WindowLeft = 3f, WindowRight = 13f, WindowBottom = 0f, WindowHeight = 5f;
     public const float WindowTop = WindowBottom + WindowHeight;
+    public const int WindowSceneryLayer = 30;
+    public const float WindowSurfaceZ = -4.26f;
+    public static Vector4 WindowCityVolume => new Vector4(160,80,70,WindowSurfaceZ);
+    public static Rect WindowBarrier => Rect.MinMaxRect(WindowLeft,WindowSurfaceZ-.5f,WindowRight,WindowSurfaceZ+.12f);
     public static Vector4 WindowAperture => new Vector4(WindowLeft + .12f, WindowBottom + .10f,
         WindowRight - .12f, WindowTop - .10f);
     // The authored diorama occupied Y=1.5..7.5; remap it as one coherent composition.

@@ -1,5 +1,9 @@
 # Техническая база
 
+## Ходьба и видимость (30 октября 2026)
+
+CourierLegPlacement завершает humanoid-позу после Animator: колени вперёд, удержание опорной стопы и дуга переноса. GaitClips исключает запечённые IK-цели idle и боковые развороты ног. SceneKit владеет общим материалом WorldText с ZTest; ShipWindowView владеет камерой и текстурой композиции города, WindowSurface выводит дальнюю панораму на одном меше. Слой 30 зарезервирован под исходный город и исключён из главной камеры. Детали и ограничения — [MOVEMENT_VISIBILITY.md](MOVEMENT_VISIBILITY.md).
+
 ## Репозиторий
 Локальная папка: W:\Planets\Yantages.
 Origin: git@github.com:kolumb718/Yantages.git.

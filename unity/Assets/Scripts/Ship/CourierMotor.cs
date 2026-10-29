@@ -5,7 +5,7 @@ using UnityEngine;
 public sealed class CourierMotor
 {
     // Brisk walk and jog; the locomotion clips are tuned to these paces.
-    public const float WalkSpeed = 2.4f, SprintSpeed = 4.4f;
+    public const float WalkSpeed = 1.65f, SprintSpeed = 3.8f;
     public const float Radius = .22f;
     const float TurnDegreesPerSecond = 720;
 
@@ -21,6 +21,7 @@ public sealed class CourierMotor
         Courier = courier;
         this.lift = lift;
         facing = courier.rotation;
+        AddObstacle(ShipLayout.WindowBarrier,ShipLayout.LivingDeck);
     }
 
     // Blocks the footprint of everything rendered under root; inset forgives overhanging leaves.
@@ -34,7 +35,13 @@ public sealed class CourierMotor
             bounds.max.x - inset, bounds.max.z - inset);
         if (footprint.width <= 0 || footprint.height <= 0) return;
         int deck = ShipLayout.DeckAt(bounds.min.y + .05f);
-        if (!obstacles.TryGetValue(deck, out var list)) obstacles.Add(deck, list = new List<Rect>());
+        AddObstacle(footprint,deck);
+    }
+
+    public void AddObstacle(Rect footprint,int deck)
+    {
+        if(footprint.width<=0 || footprint.height<=0)return;
+        if(!obstacles.TryGetValue(deck,out var list))obstacles.Add(deck,list=new List<Rect>());
         list.Add(footprint);
     }
 

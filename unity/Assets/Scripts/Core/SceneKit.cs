@@ -8,8 +8,24 @@ public sealed class SceneKit
     readonly List<Object> owned = new List<Object>();
     readonly Dictionary<Color, Material> flat = new Dictionary<Color, Material>();
     Font font;
+    Material textMaterial;
 
     public Font Font => font != null ? font : font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+    Material TextMaterial
+    {
+        get
+        {
+            if(textMaterial!=null)return textMaterial;
+            textMaterial=Own(new Material(ShipShaders.WorldText){name="Depth-tested world lettering",mainTexture=Font.material.mainTexture});
+            UnityEngine.Font.textureRebuilt+=RefreshFontAtlas;
+            return textMaterial;
+        }
+    }
+    void RefreshFontAtlas(Font rebuilt)
+    {
+        if(rebuilt==font && textMaterial!=null)textMaterial.mainTexture=font.material.mainTexture;
+    }
 
     public T Own<T>(T asset) where T : Object
     {
@@ -90,7 +106,7 @@ public sealed class SceneKit
         label.alignment = TextAlignment.Center;
         label.color = color;
         label.text = text;
-        item.GetComponent<MeshRenderer>().sharedMaterial = Font.material;
+        item.GetComponent<MeshRenderer>().sharedMaterial = TextMaterial;
         return label;
     }
 
@@ -110,6 +126,7 @@ public sealed class SceneKit
 
     public void Release()
     {
+        UnityEngine.Font.textureRebuilt-=RefreshFontAtlas;
         foreach (var asset in owned) if (asset != null) Object.Destroy(asset);
         owned.Clear();
         flat.Clear();

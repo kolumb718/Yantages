@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Original procedural city diorama: self-lit scenery stays inside the window frame.
+// The city is composed off-screen and shown on a single opaque window plane.
+// Its source layers keep subtle parallax without becoming physical cardboard up close.
 public sealed class ShipWindowView : MonoBehaviour
 {
     bool built;
@@ -11,6 +12,18 @@ public sealed class ShipWindowView : MonoBehaviour
     static readonly int WindowAperture = Shader.PropertyToID("_WindowAperture");
     Vector3 referenceCamera;
     bool hasReference;
+    readonly SceneKit kit=new SceneKit();
+    Camera compositionCamera,mainView;
+    RenderTexture composedCity;
+    Mesh surfaceMesh;
+    MeshRenderer display;
+    int originalSceneryMask;
+    bool textureReady;
+    Vector3 lastOffset;
+    Vector3 pendingOffset;
+    bool renderPending,composing;
+    public Renderer Display => display;
+    public Camera CompositionCamera => compositionCamera;
 
     // Parallax is zero when the camera stands at this world position (the whole-ship overview).
     public void SetReference(Vector3 cameraPosition)
@@ -34,6 +47,11 @@ public sealed class ShipWindowView : MonoBehaviour
         // Far scenery follows the eye more, so it travels less on screen than nearby docks.
         for (int i = 0; i < layers.Count; i++) layers[i].localPosition = delta * depthWeights[i];
         Shader.SetGlobalMatrix(WorldToWindow, windowRoot.worldToLocalMatrix);
+        if(compositionCamera!=null && windowRoot.gameObject.activeInHierarchy
+            && (!textureReady || (delta-lastOffset).sqrMagnitude>.000004f))
+        {
+            renderPending=true;pendingOffset=delta;
+        }
     }
 
     readonly List<Material> materials = new List<Material>();
@@ -133,6 +151,59 @@ public sealed class ShipWindowView : MonoBehaviour
         layers.Add(landmark.Create("Stepped skyline landmark", root, materials));
         layers.Add(details.Create("City antennas and traffic lights", root, materials));
         frame.Create("Panoramic window frame", root, materials);
+        BuildDisplay(root);
+    }
+
+    void BuildDisplay(Transform root)
+    {
+        // Only the frame and this display are visible to the player's camera. Source buildings
+        // render through an orthographic camera, so their side faces cannot fan out near the eye.
+        foreach(var renderer in root.GetComponentsInChildren<Renderer>())
+            if(renderer.name!="Panoramic window frame")renderer.gameObject.layer=ShipLayout.WindowSceneryLayer;
+        mainView=Camera.main;
+        if(mainView!=null)
+        {
+            originalSceneryMask=mainView.cullingMask;
+            mainView.cullingMask &= ~(1<<ShipLayout.WindowSceneryLayer);
+        }
+        var aperture=ShipLayout.WindowAperture;
+        composedCity=kit.Own(new RenderTexture(2048,1024,24){name="Continuous city window",filterMode=FilterMode.Bilinear,wrapMode=TextureWrapMode.Clamp});
+        composedCity.Create();
+        var camera=new GameObject("Window city composition camera");camera.transform.SetParent(root,false);
+        camera.transform.localPosition=new Vector3((aperture.x+aperture.z)*.5f,(aperture.y+aperture.w)*.5f,5);
+        camera.transform.localRotation=Quaternion.Euler(0,180,0);
+        compositionCamera=camera.AddComponent<Camera>();
+        compositionCamera.enabled=false;compositionCamera.orthographic=true;
+        compositionCamera.orthographicSize=(aperture.w-aperture.y)*.5f;
+        compositionCamera.aspect=(aperture.z-aperture.x)/(aperture.w-aperture.y);
+        compositionCamera.nearClipPlane=.05f;compositionCamera.farClipPlane=20;
+        compositionCamera.cullingMask=1<<ShipLayout.WindowSceneryLayer;
+        compositionCamera.clearFlags=CameraClearFlags.SolidColor;compositionCamera.backgroundColor=new Color(.36f,.28f,.38f);
+        compositionCamera.targetTexture=composedCity;
+        surfaceMesh=kit.Own(new Mesh{name="Single city window surface"});
+        float z=ShipLayout.WindowSurfaceZ;
+        surfaceMesh.vertices=new[]{new Vector3(aperture.x,aperture.y,z),new Vector3(aperture.x,aperture.w,z),
+            new Vector3(aperture.z,aperture.w,z),new Vector3(aperture.z,aperture.y,z)};
+        surfaceMesh.uv=new[]{new Vector2(1,0),new Vector2(1,1),new Vector2(0,1),new Vector2(0,0)};
+        surfaceMesh.triangles=new[]{0,2,1,0,3,2};surfaceMesh.RecalculateNormals();surfaceMesh.RecalculateBounds();
+        var screen=new GameObject("Window city surface",typeof(MeshFilter),typeof(MeshRenderer));screen.transform.SetParent(root,false);
+        screen.GetComponent<MeshFilter>().sharedMesh=surfaceMesh;
+        var material=kit.Custom("Continuous distant window view",ShipShaders.WindowSurface);material.mainTexture=composedCity;
+        material.SetVector("_CityVolume",ShipLayout.WindowCityVolume);
+        display=screen.GetComponent<MeshRenderer>();display.sharedMaterial=material;
+        compositionCamera.Render();textureReady=true;
+        Camera.onPreCull+=ComposeForMainView;
+    }
+
+    void ComposeForMainView(Camera camera)
+    {
+        if(camera!=mainView || composing || !renderPending || compositionCamera==null
+            || windowRoot==null || !windowRoot.gameObject.activeInHierarchy)return;
+        // Compose after animation/LateUpdate, immediately before the real camera renders.
+        // Rendering a helper camera earlier can cache skinned poses before foot placement.
+        composing=true;
+        try{compositionCamera.Render();lastOffset=pendingOffset;textureReady=true;renderPending=false;}
+        finally{composing=false;}
     }
 
     int Flat(string name, string hex)
@@ -185,12 +256,18 @@ public sealed class ShipWindowView : MonoBehaviour
 
     void OnDestroy()
     {
+        Camera.onPreCull-=ComposeForMainView;
+        if(mainView!=null)mainView.cullingMask=(mainView.cullingMask&~(1<<ShipLayout.WindowSceneryLayer))
+            |(originalSceneryMask&(1<<ShipLayout.WindowSceneryLayer));
+        if(compositionCamera!=null)compositionCamera.targetTexture=null;
+        if(composedCity!=null)composedCity.Release();
         if (windowRoot != null)
-            foreach (var filter in windowRoot.GetComponentsInChildren<MeshFilter>())
-                if (filter.sharedMesh != null) Destroy(filter.sharedMesh);
+            foreach (var filter in windowRoot.GetComponentsInChildren<MeshFilter>(true))
+                if (filter.sharedMesh != null && filter.sharedMesh!=surfaceMesh) Destroy(filter.sharedMesh);
         foreach (var material in materials) if (material != null) Destroy(material);
         if (skyMaterial != null) Destroy(skyMaterial);
         if (skyTexture != null) Destroy(skyTexture);
+        kit.Release();
     }
 
     static void Building(Geometry geometry, float x, float bottom, float height, float width, float z,

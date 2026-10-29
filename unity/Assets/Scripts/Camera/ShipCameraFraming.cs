@@ -53,6 +53,7 @@ public sealed class ShipCameraFraming : MonoBehaviour
         foreach (var renderer in GetComponentsInChildren<Renderer>(true))
         {
             if (renderer is SkinnedMeshRenderer || renderer.GetComponent<TextMesh>() != null
+                || (view.cullingMask & (1<<renderer.gameObject.layer))==0
                 || renderer.transform.IsChildOf(courier) || renderer.transform.IsChildOf(visuals.Platform)
                 || renderer.name.Contains("Glass")) continue;
             if (renderer.sharedMaterial != null && renderer.sharedMaterial.renderQueue >= 3000) continue;

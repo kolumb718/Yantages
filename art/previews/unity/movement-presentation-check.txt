@@ -1,0 +1,3 @@
+Lettering pixel check: front=3112, behind wall=0, reverse=0 PASS
+Window: single opaque surface, source geometry hidden from player, near/oblique captures, physical approach limit PASS
+PRESENTATION_REGRESSION_PASS
