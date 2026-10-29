@@ -1,1 +1,3 @@
-WALKING_PRESENTATION_PASS: 1141 frames, lateral error 0,0377 m, fore/aft span 0,932 m, swing lift 0,100 m, stance drift 0,122 m/s.
+Torso lean range (forward positive): 3,00 .. 3,00 degrees.
+Minimum support knee flexion: 10,92 degrees.
+WALKING_PRESENTATION_PASS: 117 frames, lateral error 0,0054 m, fore/aft span 1,013 m, swing lift 0,130 m, stance drift 0,000 m/s.

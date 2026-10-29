@@ -14,6 +14,7 @@ public static class WalkingPresentationCheck
     static Keyboard keyboard;
     static int frame=-1,samples,contactSamples,shot;
     static float started,maxLateral,plantTravel,plantTime,minZ=999,maxZ=-999,minY=999,maxY=-999;
+    static float minLean=999,maxLean=-999,minSupportFlex=999;
     static Vector3 previousLeft,previousRight,start;
     static bool leftPlanted,rightPlanted;
     static bool sampling;
@@ -75,8 +76,13 @@ public static class WalkingPresentationCheck
                 InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
                 InputSystem.settings.editorInputBehaviorInPlayMode=InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
                 keyboard=InputSystem.AddDevice<Keyboard>();
+                // Exercise a normal game timestep, rather than hiding contact errors at batch frame rates.
+                Time.captureDeltaTime=1f/60;
                 var loop=PlayerLoop.GetCurrentPlayerLoop();Require(Inject(ref loop),"No post-LateUpdate sampling point.");PlayerLoop.SetPlayerLoop(loop);
                 courier.position=new Vector3(-6,0,2.4f);start=courier.position;
+                // The probe teleports to a clear corridor; settle the follow camera before W,
+                // otherwise its old position turns this straight-walk test into a curved start.
+                UnityEngine.Object.FindFirstObjectByType<ShipCameraFraming>().UpdateDeckView();
                 InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W));
                 started=Time.time;SessionState.SetInt(State,2);return;
             }
@@ -88,6 +94,10 @@ public static class WalkingPresentationCheck
             Require(Vector3.Distance(courier.position,start)>2,"Real keyboard walking did not move courier.");
             Require(maxLateral<.065f,"Feet still swing laterally: "+maxLateral);
             Require(maxZ-minZ>.3f && maxY-minY>.06f,"Legs do not stride forward and lift.");
+            Log("Torso lean range (forward positive): "+minLean.ToString("F2")+" .. "+maxLean.ToString("F2")+" degrees.");
+            Require(minLean>=0 && maxLean<7,"Walking torso leans backwards or bends too far forward.");
+            Require(minSupportFlex<18,"Support leg remains crouched throughout the stride.");
+            Log("Minimum support knee flexion: "+minSupportFlex.ToString("F2")+" degrees.");
             Require(plantTime>0 && plantTravel/plantTime<.18f,"Stance feet still skate: "+plantTravel/Mathf.Max(.001f,plantTime)+" m/s");
             Log("WALKING_PRESENTATION_PASS: "+samples+" frames, lateral error "+maxLateral.ToString("F4")
                 +" m, fore/aft span "+(maxZ-minZ).ToString("F3")+" m, swing lift "+(maxY-minY).ToString("F3")
@@ -108,8 +118,19 @@ public static class WalkingPresentationCheck
             if(elapsed>.55f && characters.Legs.Weight>.95f)
             {
                 var animator=courier.GetComponentInChildren<Animator>();
+                var hips=animator.GetBoneTransform(HumanBodyBones.Hips);
+                var neck=animator.GetBoneTransform(HumanBodyBones.Neck);
+                var torso=courier.InverseTransformVector(neck.position-hips.position);
+                float lean=Mathf.Atan2(torso.z,torso.y)*Mathf.Rad2Deg;
+                minLean=Mathf.Min(minLean,lean);maxLean=Mathf.Max(maxLean,lean);
                 var left=animator.GetBoneTransform(HumanBodyBones.LeftFoot).position;
                 var right=animator.GetBoneTransform(HumanBodyBones.RightFoot).position;
+                if(characters.Legs.LeftPlanted)
+                {
+                    var hip=animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg).position;
+                    var knee=animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg).position;
+                    minSupportFlex=Mathf.Min(minSupportFlex,180-Vector3.Angle(hip-knee,left-knee));
+                }
                 var localLeft=courier.InverseTransformPoint(left);var localRight=courier.InverseTransformPoint(right);
                 maxLateral=Mathf.Max(maxLateral,Mathf.Abs(localLeft.x+.105f),Mathf.Abs(localRight.x-.105f));
                 minZ=Mathf.Min(minZ,localLeft.z);maxZ=Mathf.Max(maxZ,localLeft.z);
@@ -132,6 +153,7 @@ public static class WalkingPresentationCheck
     static void Finish(int code)
     {
         if(keyboard!=null)InputSystem.RemoveDevice(keyboard);
+        Time.captureDeltaTime=0;
         SessionState.SetInt(State,0);EditorApplication.update-=Tick;EditorApplication.Exit(code);
     }
 }

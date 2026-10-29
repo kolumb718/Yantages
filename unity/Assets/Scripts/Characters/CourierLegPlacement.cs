@@ -18,7 +18,7 @@ public sealed class CourierLegPlacement
     }
     readonly Transform courier;
     readonly Animator animator;
-    readonly Transform pelvis;
+    readonly Transform pelvis,neck;
     readonly Leg left,right;
     Vector3 previousPosition;
     Quaternion previousRotation;
@@ -32,6 +32,7 @@ public sealed class CourierLegPlacement
     public CourierLegPlacement(Transform root,Animator rig)
     {
         courier=root;animator=rig;pelvis=rig.GetBoneTransform(HumanBodyBones.Hips);
+        neck=rig.GetBoneTransform(HumanBodyBones.Neck);
         left=Create(HumanBodyBones.LeftUpperLeg,HumanBodyBones.LeftLowerLeg,HumanBodyBones.LeftFoot,HumanBodyBones.LeftToes,-1);
         right=Create(HumanBodyBones.RightUpperLeg,HumanBodyBones.RightLowerLeg,HumanBodyBones.RightFoot,HumanBodyBones.RightToes,1);
         float leftSlope=left.toeDirection.y/Mathf.Max(.01f,new Vector2(left.toeDirection.x,left.toeDirection.z).magnitude);
@@ -71,14 +72,36 @@ public sealed class CourierLegPlacement
         weight=Mathf.MoveTowards(weight,target,dt*10);
         if(weight<=0){left.initialized=right.initialized=false;return;}
         float run=Mathf.InverseLerp(CourierMotor.WalkSpeed,CourierMotor.SprintSpeed,speed);
+        // The imported idle arches backwards. Balance the animated torso over the hips
+        // before solving the legs, preserving its yaw, roll and counter-rotation.
+        // Measure the bone positions: local bone axes differ between humanoid avatars.
+        if(neck!=null)
+        {
+            var torso=neck.position-pelvis.position;
+            float lean=Mathf.Atan2(Vector3.Dot(torso,courier.forward),Vector3.Dot(torso,courier.up))*Mathf.Rad2Deg;
+            float desiredLean=Mathf.Lerp(3,8,run);
+            pelvis.rotation=Quaternion.AngleAxis((desiredLean-lean)*weight,courier.right)*pelvis.rotation;
+        }
         float stance=Mathf.Lerp(.55f,.38f,run);
         float cycle=animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
         float length=Mathf.Max(.1f,animator.GetCurrentAnimatorStateInfo(0).length)/Mathf.Max(.1f,animator.speed);
         float lead=Mathf.Clamp(speed*length*stance*.5f,.12f,.5f);
-        // A small knee softness keeps straight stance legs within their anatomical reach.
-        pelvis.position-=Vector3.up*(.065f*weight);
         Place(left,Mathf.Repeat(cycle,1),stance,lead,Mathf.Lerp(.10f,.21f,run));
         Place(right,Mathf.Repeat(cycle+.5f,1),stance,lead,Mathf.Lerp(.10f,.21f,run));
+        // Stand tall over the support leg instead of permanently lowering the hips.
+        // At double support use the lower reachable height so neither foot is dragged.
+        float supportHeight=Mathf.Min(SupportHeight(left),SupportHeight(right));
+        if(!float.IsPositiveInfinity(supportHeight))pelvis.position+=courier.up*(supportHeight*weight);
+        Finish(left);Finish(right);
+    }
+
+    float SupportHeight(Leg leg)
+    {
+        if(!leg.stance)return float.PositiveInfinity;
+        var horizontal=Vector3.ProjectOnPlane(leg.target-leg.hip.position,courier.up);
+        float reach=leg.thigh+leg.shin-.004f;
+        float vertical=Mathf.Sqrt(Mathf.Max(.01f,reach*reach-horizontal.sqrMagnitude));
+        return leg.target.y+vertical-leg.hip.position.y;
     }
 
     void Place(Leg leg,float phase,float stance,float lead,float lift)
@@ -109,7 +132,11 @@ public sealed class CourierLegPlacement
         }
         leg.stance=planted;leg.phase=phase;
         leg.target=target;
-        Solve(leg,Vector3.Lerp(leg.foot.position,target,weight));
+    }
+
+    void Finish(Leg leg)
+    {
+        Solve(leg,Vector3.Lerp(leg.foot.position,leg.target,weight));
         leg.foot.rotation=Quaternion.Slerp(leg.foot.rotation,courier.rotation*leg.rotation,weight);
         leg.solved=leg.foot.position;
     }

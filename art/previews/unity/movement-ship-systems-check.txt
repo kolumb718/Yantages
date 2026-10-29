@@ -6,11 +6,11 @@ Wood bookshelf measured metres (1.15, 2.00, 0.40)
 scale and orbit: five-metre floor-level window, furniture XYZ, terminal, EVA suit, orbit controls, wall clearance PASS
 living deck: household objects, human-sized fridge, obstacles, sofa/terminal/lift/bridge routes PASS (motor path; keyboard checked separately)
 follow start: camera (-4.00, 2.33, 3.93) courier screen (0.00, -0.07)
-dead zone drift 2,0667
+dead zone drift 2,0663
 walk to bridge: courier x 5,80 pan -9,80 screen (0.00, -0.07)
 walk into coffee table stops at x -8,25
 overview error 0,0000
-door leaf while departing 0,379
+door leaf while departing 0,365
 cabin arrival screen (0.00, -0.07)
 walk frame 0: speed param 1,65, playback 1,00
 walk frame 1: speed param 1,65, playback 1,00

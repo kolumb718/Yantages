@@ -2,7 +2,7 @@
 
 ## Ходьба и видимость
 
-В проверочной копии Unity запускать WalkingPresentationCheck.Run и PresentationRegressionCheck.Run: обязательны код 0, WALKING_PRESENTATION_PASS и PRESENTATION_REGRESSION_PASS. Первая проверка подаёт W через виртуальную клавиатуру и снимает кости после LateUpdate; предел бокового отклонения 6,5 см, скорость скольжения опорной стопы менее 0,18 м/с. Вторая сравнивает реальные пиксели текста спереди, за стеной и сзади, проверяет маски окна и снимает два близких ракурса. Затем CharacterIntegrationCheck, ShipSystemsCheck и GalaxyIntegrationCheck проверяют соседние системы. Полный ручной ввод и Player проверяются отдельно. Факты — [MOVEMENT_VISIBILITY.md](MOVEMENT_VISIBILITY.md).
+В проверочной копии Unity запускать WalkingPresentationCheck.Run и PresentationRegressionCheck.Run: обязательны код 0, WALKING_PRESENTATION_PASS и PRESENTATION_REGRESSION_PASS. Первая проверка подаёт W через виртуальную клавиатуру с шагом времени 1/60 с и снимает кости после LateUpdate; предел бокового отклонения 6,5 см, скорость скольжения опорной стопы менее 0,18 м/с, наклон корпуса вперёд от 0 до 7°, опорное колено хотя бы в середине опоры распрямляется до сгибания менее 18°. Вторая сравнивает реальные пиксели текста спереди, за стеной и сзади, проверяет маски окна и снимает два близких ракурса. Затем CharacterIntegrationCheck, ShipSystemsCheck и GalaxyIntegrationCheck проверяют соседние системы. Полный ручной ввод и Player проверяются отдельно. Факты — [MOVEMENT_VISIBILITY.md](MOVEMENT_VISIBILITY.md).
 
 ## Для изменения документации
 Проверить факты по коду/истории, относительные ссылки, разделение решений и предложений, git diff --check.
